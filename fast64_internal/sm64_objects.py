@@ -430,44 +430,12 @@ def exportAreaCommon(areaObj, transformMatrix, geolayout, collision, name):
 
 # These are all done in reference to refresh 8
 def handleRefreshDiffModelIDs(modelID):
-	if bpy.context.scene.refreshVer == 'Refresh 8' or \
-		bpy.context.scene.refreshVer == 'Refresh 7':
-		pass
-	elif bpy.context.scene.refreshVer == 'Refresh 6':
-		if modelID == 'MODEL_TWEESTER':
-			modelID = 'MODEL_TORNADO'
-	elif bpy.context.scene.refreshVer == 'Refresh 5' or \
-		bpy.context.scene.refreshVer == 'Refresh 4' or \
-		bpy.context.scene.refreshVer == 'Refresh 3':
-		if modelID == 'MODEL_TWEESTER':
-			modelID = 'MODEL_TORNADO'
-		elif modelID == 'MODEL_WAVE_TRAIL':
-			modelID = "MODEL_WATER_WAVES"
-		elif modelID == 'MODEL_IDLE_WATER_WAVE':
-			modelID = 'MODEL_WATER_WAVES_SURF'
-		elif modelID == 'MODEL_SMALL_WATER_SPLASH':
-			modelID = 'MODEL_SPOT_ON_GROUND'
-
 	return modelID
 
 def handleRefreshDiffSpecials(preset):
-	if bpy.context.scene.refreshVer == 'Refresh 8' or \
-		bpy.context.scene.refreshVer == 'Refresh 7' or \
-		bpy.context.scene.refreshVer == 'Refresh 6' or \
-		bpy.context.scene.refreshVer == 'Refresh 5' or \
-		bpy.context.scene.refreshVer == 'Refresh 4' or \
-		bpy.context.scene.refreshVer == 'Refresh 3':
-		pass
 	return preset
 
 def handleRefreshDiffMacros(preset):
-	if bpy.context.scene.refreshVer == 'Refresh 8' or \
-		bpy.context.scene.refreshVer == 'Refresh 7' or \
-		bpy.context.scene.refreshVer == 'Refresh 6' or \
-		bpy.context.scene.refreshVer == 'Refresh 5' or \
-		bpy.context.scene.refreshVer == 'Refresh 4' or \
-		bpy.context.scene.refreshVer == 'Refresh 3':
-		pass
 	return preset
 
 def start_process_sm64_objects(obj, area, transformMatrix, specialsOnly):
@@ -507,8 +475,7 @@ def process_sm64_objects(obj, area, rootMatrix, transformMatrix, specialsOnly):
 			if obj.sm64_obj_type == 'Object':
 				modelID = obj.sm64_model_enum if obj.sm64_model_enum != 'Custom' else obj.sm64_obj_model
 				modelID = handleRefreshDiffModelIDs(modelID)
-				behaviour = func_map[bpy.context.scene.refreshVer][obj.sm64_behaviour_enum] if \
-					obj.sm64_behaviour_enum != 'Custom' else obj.sm64_obj_behaviour
+				behaviour = obj.sm64_obj_behaviour
 				area.objects.append(SM64_Object(modelID, translation, rotation.to_euler(), 
 					behaviour, obj.sm64_obj_bparam, get_act_string(obj)))
 			elif obj.sm64_obj_type == 'Macro':
@@ -589,9 +556,7 @@ class SearchBehaviourEnumOperator(bpy.types.Operator):
 	def execute(self, context):
 		context.object.sm64_behaviour_enum = self.sm64_behaviour_enum
 		bpy.context.region.tag_redraw()
-		name = func_map[context.scene.refreshVer][self.sm64_behaviour_enum] if \
-			self.sm64_behaviour_enum != 'Custom' else 'Custom'
-		self.report({'INFO'}, "Selected: " + name)
+		self.report({'INFO'}, "Selected: " + sm64_behaviour_enum)
 		return {'FINISHED'}
 
 	def invoke(self, context, event):

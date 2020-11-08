@@ -2013,7 +2013,7 @@ def mat_register():
 
 	bpy.types.Scene.update_flag = bpy.props.BoolProperty()
 	bpy.types.Scene.f3d_type = bpy.props.EnumProperty(
-		name = 'F3D Microcode', items = enumF3D, default = 'F3D')
+		name = 'F3D Microcode', items = enumF3D, default = 'F3DEX2/LX2')
 	bpy.types.Scene.isHWv1 = bpy.props.BoolProperty(name = 'Is Hardware v1?')
 	
 	# RDP Defaults

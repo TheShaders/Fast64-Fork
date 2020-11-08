@@ -335,7 +335,7 @@ def removeTrailingFrames(frameData):
 
 def saveTranslationFrame(frameData, translation):
 	for i in range(3):
-		frameData[i].append(min(int(round(translation[i] * bpy.context.scene.blenderToSM64Scale)),
+		frameData[i].append(min(int(round(translation[i] * bpy.context.scene.blenderToN64Scale)),
 			2**16 - 1))
 
 def convertAnimationData(anim, armatureObj, frameEnd):
@@ -516,7 +516,7 @@ def getKeyFramesTranslation(romfile, transformValuesStart, boneIndex):
 	for frame in range(boneIndex.numFrames):
 		romfile.seek(ptrToValue + frame * 2)
 		keyframes.append(int.from_bytes(romfile.read(2), 'big', signed = True) /\
-			bpy.context.scene.blenderToSM64Scale)
+			bpy.context.scene.blenderToN64Scale)
 
 	return keyframes
 

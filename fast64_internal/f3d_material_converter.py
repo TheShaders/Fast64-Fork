@@ -172,7 +172,7 @@ class F3DMaterialConverterPanel(bpy.types.Panel):
 	bl_idname = "F3D_Material_Converter"
 	bl_space_type = 'VIEW_3D'
 	bl_region_type = 'UI'
-	bl_category = 'Fast64'
+	bl_category = 'Fast64 Fork'
 
 	@classmethod
 	def poll(cls, context):

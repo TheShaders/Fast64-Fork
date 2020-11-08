@@ -573,7 +573,7 @@ def exportLevelC(obj, transformMatrix, f3dType, isHWv1, levelName, exportDir,
 	cameraVolumeString += '\tNULL_TRIGGER\n};'
 
 	# Generate levelscript string
-	compressionFmt = bpy.context.scene.compressionFormat
+	compressionFmt = 'MIO0'
 	replaceSegmentLoad(prevLevelScript, 
 		'_' + levelName + '_segment_7', 'LOAD_' + compressionFmt.upper(), 0x07)
 	if usesEnvFX:

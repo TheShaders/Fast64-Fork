@@ -11,7 +11,7 @@ def readSegmentInfo(baseDir):
 	ldData = ldFile.read()
 	ldFile.close()
 
-	compressionFmt = bpy.context.scene.compressionFormat
+	compressionFmt = 'MIO0'
 	segDict = {}
 	for matchResult in re.finditer('(?<!#define )STANDARD\_OBJECTS\(' +\
 		'(((?!\,).)*)\,\s*(((?!\,).)*)\,\s*(((?!\)).)*)\)', ldData):

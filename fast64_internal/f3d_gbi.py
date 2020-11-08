@@ -1338,37 +1338,23 @@ class Vtx:
 			bytearray(self.colorOrNormal)
 
 	def to_c(self):
-		if bpy.context.scene.decomp_compatible:
-			return '{{' + \
-				'{' +\
-					str(self.position[0]) + ', ' + \
-					str(self.position[1]) + ', ' + \
-					str(self.position[2]) + \
-				'},' +\
-				'0, ' + \
-				'{' +\
-					str(self.uv[0]) + ", " +\
-					str(self.uv[1]) + \
-				'},' +\
-				'{' +\
-					'0x' + format(self.colorOrNormal[0], 'X') + ', ' + \
-					'0x' + format(self.colorOrNormal[1], 'X') + ', ' + \
-					'0x' + format(self.colorOrNormal[2], 'X') + ', ' + \
-					'0x' + format(self.colorOrNormal[3], 'X') + \
-				'}' + '}}'
-		else:
-			return '{' + \
+		return '{{' + \
+			'{' +\
 				str(self.position[0]) + ', ' + \
 				str(self.position[1]) + ', ' + \
-				str(self.position[2]) + ', ' + \
-				'0, ' + \
+				str(self.position[2]) + \
+			'},' +\
+			'0, ' + \
+			'{' +\
 				str(self.uv[0]) + ", " +\
-				str(self.uv[1]) + ", " +\
+				str(self.uv[1]) + \
+			'},' +\
+			'{' +\
 				'0x' + format(self.colorOrNormal[0], 'X') + ', ' + \
 				'0x' + format(self.colorOrNormal[1], 'X') + ', ' + \
 				'0x' + format(self.colorOrNormal[2], 'X') + ', ' + \
 				'0x' + format(self.colorOrNormal[3], 'X') + \
-				'}'
+			'}' + '}}'
 	
 	def to_sm64_decomp_s(self):
 		return 'vertex ' + \
@@ -2497,7 +2483,7 @@ class SPVertex:
 	
 	def to_c(self, static = True):
 		header = 'gsSPVertex(' if static else 'gSPVertex(glistp++, '
-		if not static and bpy.context.scene.decomp_compatible:
+		if not static:
 			header += 'segmented_to_virtual(' + self.vertList.name + ' + ' + str(self.offset) + ')'
 		else:
 			header += self.vertList.name + ' + ' + str(self.offset)
@@ -2555,10 +2541,7 @@ class SPDisplayList:
 			return 'gsSPDisplayList(' + self.displayList.name + ')'
 		elif self.displayList.DLFormat == "Static":
 			header = 'gSPDisplayList(glistp++, '
-			if bpy.context.scene.decomp_compatible:
-				return header + 'segmented_to_virtual(' + self.displayList.name + '))'
-			else:
-				return header + self.displayList.name + ')'
+			return header + 'segmented_to_virtual(' + self.displayList.name + '))'
 		else:
 			return 'glistp = ' + self.displayList.name + '(glistp)'
 
@@ -2963,7 +2946,7 @@ class SPLight:
 
 	def to_c(self, static = True):
 		header = 'gsSPLight(' if static else 'gSPLight(glistp++, '
-		if not static and bpy.context.scene.decomp_compatible:
+		if not static:
 			header += 'segmented_to_virtual(' + self.light.name + ')'
 		else:
 			header += self.light.name
@@ -3035,7 +3018,7 @@ class SPSetLights:
 	def to_c(self, static = True):
 		header = 'gsSPSetLights' + str(len(self.lights.l)) + '(' if static \
 			else 'gSPSetLights' + str(len(self.lights.l)) + '(glistp++, '
-		if not static and bpy.context.scene.decomp_compatible:
+		if not static:
 			header += '(*(Lights' + str(len(self.lights.l)) + '*) segmented_to_virtual(&' + self.lights.name + '))'
 		else:
 			header += self.lights.name
@@ -3828,7 +3811,7 @@ class DPSetTextureImage:
 			'gDPSetTextureImage(glistp++, '
 		header += self.fmt + ', ' + self.siz + ', ' + \
 			str(self.width) + ', '
-		if not static and bpy.context.scene.decomp_compatible:
+		if not static:
 			header += 'segmented_to_virtual(' + self.image.name + '))'
 		else:
 			header += self.image.name + ')'
