@@ -70,30 +70,42 @@ class Model:
 		bone.parentIndex = 0xFF
 
 	def to_c(self):
+		lightDefs = ''
+		textureDefs = ''
+		materialDefs = ''
+		dlDefs = ''
+		layerDefs = ''
+		boneDefs = 'Bone ' + self.name + '_bones[] = {\n'
 		modelDef = 'Model ' + self.name + ' = {\n'
 		modelDef += '    ' + str(len(self.bones)) + ',\n' # Bone count
 		modelDef += '    0,\n'                       # Reserved
 		modelDef += '    ' + self.name + '_bones\n'  # Bone array pointer
 		modelDef += '};\n'
-		layerDefs = ''
-		boneDefs = 'Bone ' + self.name + '_bones[] = {\n'
+		for name, light in self.lights.items():
+			lightDefs += light.to_c() + '\n'
+		for info, texture in self.textures.items():
+			textureDefs += texture.to_c() + '\n'
+		for (material, drawLayer), (fMaterial, texDimensions) in self.materials.items():
+			materialDefs += fMaterial.to_c(self.f3d) + '\n'
 		for curBone in self.bones:
-			layerDefs += curBone.layers_to_c()
+			dlDefs += curBone.displaylists_to_c()
 			boneDefs += curBone.to_c()
+			layerDefs += curBone.layers_to_c()
 		boneDefs += '};\n'
-		return layerDefs + '\n' + boneDefs + '\n' + modelDef + '\n'
+		return lightDefs + '\n' + textureDefs + '\n' + materialDefs + '\n' + dlDefs + '\n' + layerDefs + '\n' + boneDefs + '\n' + modelDef
 		
 class Bone:
-	def __init__(self):
+	def __init__(self, translation):
 		self.model = None
 		self.layers = []
+		self.translation = translation
 
 		# These two get populated by Model.addBone
 		self.index = 0xFF
 		self.parentIndex = 0xFF
 
-	def addDisplaylist(self, layer, displaylistName):
-		self.layers.append((layer, displaylistName))
+	def addLayer(self, layer, meshGroup):
+		self.layers.append((layer, meshGroup))
 
 	def to_c(self):
 		boneDef =  '    {\n'
@@ -101,9 +113,13 @@ class Bone:
 		boneDef += '        ' + str(self.parentIndex) + ',\n' # Parent index
 		boneDef += '        ' + str(len(self.layers)) + ',\n'      # Layer count
 		boneDef += '        0,\n'    # reserved
-		boneDef += '        0.0f,\n' # x base position 
-		boneDef += '        0.0f,\n' # y base position
-		boneDef += '        0.0f,\n' # z base position
+		boneDef += '        '+ str(self.translation.x) + ',\n' # x base position 
+		boneDef += '        '+ str(self.translation.y) + ',\n' # y base position
+		boneDef += '        '+ str(self.translation.z) + ',\n' # z base position
+		if len(self.layers) == 0:
+			boneDef += '        NULL,\n'
+		else:
+			boneDef += '        ' + self.model.name + '_bone' + str(self.index) + '_layers,\n' # layers
 		boneDef += '        NULL,\n' # before drawing callback
 		boneDef += '        NULL,\n' # after drawing callback
 		boneDef += '        NULL,\n' # matrix pointer (set at runtime)
@@ -111,14 +127,23 @@ class Bone:
 		return boneDef
 	
 	def layers_to_c(self):
-		layersDef =  'BoneLayer ' + self.model.name + '_bone' + str(self.index) + '_layers = {\n'
+		if len(self.layers) == 0:
+			return ''
+		layersDef =  'BoneLayer ' + self.model.name + '_bone' + str(self.index) + '_layers[] = {\n'
 		for curLayer in self.layers:
 			layersDef += '    {\n'
 			layersDef += '        ' + str(curLayer[0]) + ',\n' # Layer
-			layersDef += '        ' + str(curLayer[1]) + ',\n' # Displaylist
+			layersDef += '        ' + str(curLayer[1].name + '_mesh') + ',\n' # Displaylist
 			layersDef += '    },\n'
 		layersDef += '};\n'
 		return layersDef
+
+	def displaylists_to_c(self):
+		dlDef = ''
+		for curLayer in self.layers:
+			static, dynamic, scroll = curLayer[1].to_c(self.model.f3d)
+			dlDef += static + '\n' + dynamic + '\n'
+		return dlDef
 
 class GeolayoutGraph:
 	def __init__(self, name):

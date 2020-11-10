@@ -543,13 +543,15 @@ def processMesh(fModel, obj, transformMatrix, parentBone,
 	rotAxis, rotAngle = rotate.to_axis_angle()
 	zeroRotation = isZeroRotation(rotate)
 	zeroTranslation = isZeroTranslation(translate)
+	
+	curBone = Bone(transformMatrix @ translate)
 
 	if obj.data is None:
 		meshGroup = None
 	else:
 		meshGroup = saveStaticModel(fModel, obj, transformMatrix, fModel.name, "Static", convertTextureData, False)
+		curBone.addLayer(obj.draw_layer_static, meshGroup)
 
-	curBone = Bone()
 	fModel.addBone(curBone, parentBone)
 
 	# Todo bone translation
