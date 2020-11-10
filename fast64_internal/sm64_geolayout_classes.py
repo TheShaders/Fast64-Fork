@@ -5,6 +5,8 @@ from .sm64_constants import *
 from .sm64_function_map import func_map 
 import struct
 import copy
+import collections as ct
+from .f3d_gbi import F3D
 
 drawLayerNames = {
 	0 : 'LAYER_FORCE',
@@ -15,6 +17,14 @@ drawLayerNames = {
 	5 : 'LAYER_TRANSPARENT',
 	6 : 'LAYER_TRANSPARENT_DECAL',
 	7 : 'LAYER_TRANSPARENT_INTER',
+}
+
+layerNames = {
+	0 : "LAYER_OPA_SURF",
+	1 : "LAYER_OPA_DECAL",
+	2 : "LAYER_TEX_EDGE",
+	3 : "LAYER_XLU_SURF",
+	4 : "LAYER_XLU_DECAL",
 }
 
 def getDrawLayerName(drawLayer):
@@ -28,6 +38,87 @@ def addFuncAddress(command, func):
 		command.extend(bytes.fromhex(func))
 	except ValueError:
 		raise PluginError("In geolayout node, could not convert function \"" + str(func) + '\" to hexadecimal.')
+
+class Model:
+	def __init__(self, f3dType, name):
+		# dict of light name : Lights
+		self.lights = {}
+		# dict of (texture, (texture format, palette format)) : FImage
+		self.textures = {}
+		# dict of (material, drawLayer): (FMaterial, (width, height))
+		self.materials = {} 
+		# dict of body part name : FMeshGroup
+		self.meshGroups = {}
+		# GfxList
+		self.materialRevert = None
+		# F3D library
+		self.f3d = F3D(f3dType, False)
+		self.DLFormat = "Static"
+		self.name = name
+		self.bones = []
+		self.meshGroups = {}
+
+	def addBone(self, bone, parentBone):
+		bone.index = len(self.bones)
+		bone.model = self
+		self.bones.append(bone)
+		if parentBone is not None:
+			for curBone in self.bones:
+				if curBone is parentBone:
+					bone.parentIndex = parentBone.index
+					return
+		bone.parentIndex = 0xFF
+
+	def to_c(self):
+		modelDef = 'Model ' + self.name + ' = {\n'
+		modelDef += '    ' + str(len(self.bones)) + ',\n' # Bone count
+		modelDef += '    0,\n'                       # Reserved
+		modelDef += '    ' + self.name + '_bones\n'  # Bone array pointer
+		modelDef += '};\n'
+		layerDefs = ''
+		boneDefs = 'Bone ' + self.name + '_bones[] = {\n'
+		for curBone in self.bones:
+			layerDefs += curBone.layers_to_c()
+			boneDefs += curBone.to_c()
+		boneDefs += '};\n'
+		return layerDefs + '\n' + boneDefs + '\n' + modelDef + '\n'
+		
+class Bone:
+	def __init__(self):
+		self.model = None
+		self.layers = []
+
+		# These two get populated by Model.addBone
+		self.index = 0xFF
+		self.parentIndex = 0xFF
+
+	def addDisplaylist(self, layer, displaylistName):
+		self.layers.append((layer, displaylistName))
+
+	def to_c(self):
+		boneDef =  '    {\n'
+		boneDef += '        ' + str(self.index) + ',\n'       # Index
+		boneDef += '        ' + str(self.parentIndex) + ',\n' # Parent index
+		boneDef += '        ' + str(len(self.layers)) + ',\n'      # Layer count
+		boneDef += '        0,\n'    # reserved
+		boneDef += '        0.0f,\n' # x base position 
+		boneDef += '        0.0f,\n' # y base position
+		boneDef += '        0.0f,\n' # z base position
+		boneDef += '        NULL,\n' # before drawing callback
+		boneDef += '        NULL,\n' # after drawing callback
+		boneDef += '        NULL,\n' # matrix pointer (set at runtime)
+		boneDef += '    },\n'
+		return boneDef
+	
+	def layers_to_c(self):
+		layersDef =  'BoneLayer ' + self.model.name + '_bone' + str(self.index) + '_layers = {\n'
+		for curLayer in self.layers:
+			layersDef += '    {\n'
+			layersDef += '        ' + str(curLayer[0]) + ',\n' # Layer
+			layersDef += '        ' + str(curLayer[1]) + ',\n' # Displaylist
+			layersDef += '    },\n'
+		layersDef += '};\n'
+		return layersDef
 
 class GeolayoutGraph:
 	def __init__(self, name):

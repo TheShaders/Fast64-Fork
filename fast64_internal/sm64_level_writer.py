@@ -426,7 +426,7 @@ def parseLevelScript(filepath, levelName):
 	
 	levelscript = LevelScript(levelName)
 
-	for matchResult in re.finditer('#include\s*"actors/(\w*)\.h"', scriptData):
+	for matchResult in re.finditer('#include\s*"asssets/(\w*)\.h"', scriptData):
 		levelscript.actorIncludes.append(matchResult.group(0))
 
 	matchResult = re.search('const\s*LevelScript\s*level\_\w*\_entry\[\]\s*=\s*\{' +\
@@ -519,16 +519,17 @@ def exportLevelC(obj, transformMatrix, f3dType, isHWv1, levelName, exportDir,
 		# Needs to be done BEFORE collision parsing
 		setRooms(child)
 
-		geolayoutGraph, fModel = \
+		#geolayoutGraph, fModel = \
+		fModel = \
 			convertObjectToGeolayout(obj, transformMatrix, 
 			f3dType, isHWv1, child.areaCamera, levelName + '_' + areaName, fModel, child, DLFormat, not savePNG)
 
 		# Write geolayout
-		geoFile = open(os.path.join(areaDir, 'geo.inc.c'), 'w', newline = '\n')
-		geoFile.write(geolayoutGraph.to_c())
-		geoFile.close()
+		#geoFile = open(os.path.join(areaDir, 'geo.inc.c'), 'w', newline = '\n')
+		#geoFile.write(geolayoutGraph.to_c())
+		#geoFile.close()
 		geoString += '#include "levels/' + levelName + '/' + areaName + '/geo.inc.c"\n'
-		headerString += geolayoutGraph.to_c_def()
+		#headerString += geolayoutGraph.to_c_def()
 
 		# Write collision
 		collision = \
@@ -609,14 +610,14 @@ def exportLevelC(obj, transformMatrix, f3dType, isHWv1, levelName, exportDir,
 		writeTexScrollFiles(exportDir, levelDir, headerScroll, scroll_data)
 
 	# Write materials
-	if DLFormat == "Static":
-		static_data += dynamic_data
-		headerStatic += headerDynamic
-	else:
-		geoString = writeMaterialFiles(exportDir, levelDir, 
-			'#include "levels/' + levelName + '/header.h"', 
-			'#include "levels/' + levelName + '/material.inc.h"',
-			headerDynamic, dynamic_data, geoString, customExport)
+	#if DLFormat == "Static":
+	static_data += dynamic_data
+	headerStatic += headerDynamic
+	#else:
+	#	geoString = writeMaterialFiles(exportDir, levelDir, 
+	#		'#include "levels/' + levelName + '/header.h"', 
+	#		'#include "levels/' + levelName + '/material.inc.h"',
+	#		headerDynamic, dynamic_data, geoString, customExport)
 
 	modelPath = os.path.join(levelDir, 'model.inc.c')
 	modelFile = open(modelPath, 'w', newline='\n')
@@ -631,9 +632,9 @@ def exportLevelC(obj, transformMatrix, f3dType, isHWv1, levelName, exportDir,
 	#headerString += '\n#endif\n'
 
 	# Write geolayout
-	geoFile = open(os.path.join(levelDir, 'geo.inc.c'), 'w', newline='\n')
-	geoFile.write(geoString)
-	geoFile.close()
+	#geoFile = open(os.path.join(levelDir, 'geo.inc.c'), 'w', newline='\n')
+	#geoFile.write(geoString)
+	#geoFile.close()
 
 	levelDataFile = open(os.path.join(levelDir, 'leveldata.inc.c'), 'w', newline='\n')
 	levelDataFile.write(levelDataString)
@@ -703,7 +704,7 @@ def exportLevelC(obj, transformMatrix, f3dType, isHWv1, levelName, exportDir,
 		if obj.setAsStartLevel:
 			setStartLevel(exportDir, levelEnum)
 
-		geoPath = os.path.join(levelDir, 'geo.c')
+		#geoPath = os.path.join(levelDir, 'geo.c')
 		levelDataPath = os.path.join(levelDir, 'leveldata.c')
 		headerPath = os.path.join(levelDir, 'header.h')
 		
@@ -716,7 +717,7 @@ def exportLevelC(obj, transformMatrix, f3dType, isHWv1, levelName, exportDir,
 			createHeaderFile(levelName, headerPath)
 
 		# Write level data		
-		writeIfNotFound(geoPath, '#include "levels/' + levelName + '/geo.inc.c"\n', '')
+		#writeIfNotFound(geoPath, '#include "levels/' + levelName + '/geo.inc.c"\n', '')
 		writeIfNotFound(levelDataPath, '#include "levels/' + levelName + '/leveldata.inc.c"\n', '')
 		writeIfNotFound(headerPath, '#include "levels/' + levelName + '/header.inc.h"\n', '#endif')
 		

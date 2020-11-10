@@ -1094,7 +1094,7 @@ def update_preset_manual(material, context):
 		materialSettings.applyToMaterial(material, False)
 
 def createF3DMat(obj, preset = 'Shaded Solid', index = None):
-	material = bpy.data.materials.new('sm64_material')
+	material = bpy.data.materials.new('f3d_material')
 	if index is None:
 		obj.data.materials.append(material)
 		if bpy.context.object is not None:

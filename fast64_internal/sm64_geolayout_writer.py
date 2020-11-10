@@ -25,83 +25,6 @@ def appendSecondaryGeolayout(geoDirPath, geoName1, geoName2, additionalNode = ''
 		'\tGEO_END(),\n};\n')
 	geoFile.close()
 
-def replaceStarReferences(basePath):
-	kleptoPattern = 'GEO\_SCALE\(0x00\, 16384\)\,\s*' +\
-		'GEO\_OPEN\_NODE\(\)\,\s*' +\
-		'GEO\_ASM\([^\)]*?\)\,\s*' +\
-		'GEO\_TRANSLATE\_ROTATE\_WITH\_DL\([^\)]*? star\_seg3.*?GEO\_CLOSE\_NODE\(\)\,'
-	
-	unagiPattern = 'GEO\_SCALE\(0x00\, 16384\)\,\s*' +\
-		'GEO\_OPEN\_NODE\(\)\,\s*' +\
-		'GEO\_TRANSLATE\_ROTATE\_WITH\_DL\([^\)]*? star\_seg3.*?GEO\_CLOSE\_NODE\(\)\,'
-
-	unagiReplacement = 'GEO_TRANSLATE_ROTATE(LAYER_OPAQUE, 500, 0, 0, 0, 0, 0),\n' +\
-        '\t' * 10 + 'GEO_OPEN_NODE(),\n' +\
-        '\t' * 10 + '\tGEO_BRANCH_AND_LINK(star_geo),\n' +\
-        '\t' * 10 + 'GEO_CLOSE_NODE(),'
-
-	kleptoReplacement = 'GEO_TRANSLATE_ROTATE(LAYER_OPAQUE, 75, 75, 0, 180, 270, 0),\n' +\
-        '\t' * 10 + 'GEO_OPEN_NODE(),\n' +\
-        '\t' * 10 + '\tGEO_BRANCH_AND_LINK(star_geo),\n' +\
-        '\t' * 10 + 'GEO_CLOSE_NODE(),'
-
-	unagiPath = os.path.join(basePath, 'actors/unagi/geo.inc.c')
-	replaceDLReferenceInGeo(unagiPath, unagiPattern, unagiReplacement)
-
-	kleptoPath = os.path.join(basePath, 'actors/klepto/geo.inc.c')
-	replaceDLReferenceInGeo(kleptoPath, kleptoPattern, kleptoReplacement)
-
-def replaceTransparentStarReferences(basePath):
-	pattern = 'GEO\_SCALE\(0x00\, 16384\)\,\s*' +\
-		'GEO\_OPEN\_NODE\(\)\,\s*' +\
-		'GEO\_ASM\([^\)]*?\)\,\s*' +\
-		'GEO\_TRANSLATE\_ROTATE\_WITH\_DL\([^\)]*? transparent_star\_seg3.*?GEO\_CLOSE\_NODE\(\)\,'
-	
-	kleptoReplacement = 'GEO_TRANSLATE_ROTATE(LAYER_OPAQUE, 75, 75, 0, 180, 270, 0),\n' +\
-        '\t' * 10 + 'GEO_OPEN_NODE(),\n' +\
-        '\t' * 10 + '\tGEO_BRANCH_AND_LINK(transparent_star_geo),\n' +\
-        '\t' * 10 + 'GEO_CLOSE_NODE(),'
-
-	kleptoPath = os.path.join(basePath, 'actors/klepto/geo.inc.c')
-	replaceDLReferenceInGeo(kleptoPath, pattern, kleptoReplacement)
-
-def replaceCapReferences(basePath):
-	pattern = 'GEO\_TRANSLATE\_ROTATE\_WITH\_DL\([^\)]*?mario\_cap\_seg3.*?\)\,'
-	kleptoPattern = 'GEO\_SCALE\(0x00\, 16384\)\,\s*' +\
-		'GEO\_OPEN\_NODE\(\)\,\s*' +\
-		'GEO\_ASM\([^\)]*?\)\,\s*' +\
-		'GEO\_TRANSLATE\_ROTATE\_WITH\_DL\([^\)]*? mario\_cap\_seg3.*?GEO\_CLOSE\_NODE\(\)\,'
-	
-	kleptoReplacement = 'GEO_TRANSLATE_ROTATE(LAYER_OPAQUE, 75, 75, 0, 180, 270, 0),\n' +\
-        '\t' * 10 + 'GEO_OPEN_NODE(),\n' +\
-        '\t' * 10 + '\tGEO_BRANCH_AND_LINK(marios_cap_geo),\n' +\
-        '\t' * 10 + 'GEO_CLOSE_NODE(),'
-
-	ukikiReplacement = 'GEO_TRANSLATE_ROTATE(LAYER_OPAQUE, 100, 0, 0, -90, -90, 0),\n' +\
-        '\t' * 8 + 'GEO_OPEN_NODE(),\n' +\
-		'\t' * 8 + 'GEO_SCALE(0x00, 0x40000),\n' +\
-		'\t' * 8 + '\tGEO_OPEN_NODE(),\n' +\
-        '\t' * 8 + '\t\tGEO_BRANCH_AND_LINK(marios_cap_geo),\n' +\
-		'\t' * 8 + '\tGEO_CLOSE_NODE(),' +\
-        '\t' * 8 + 'GEO_CLOSE_NODE(),'
-
-	snowmanReplacement = 'GEO_TRANSLATE_ROTATE(LAYER_OPAQUE, 490, 14, 43, 305, 0, 248),\n' +\
-		'\t' * 7 + 'GEO_OPEN_NODE(),\n' +\
-		'\t' * 7 + 'GEO_SCALE(0x00, 0x40000),\n' +\
-		'\t' * 7 + '\tGEO_OPEN_NODE(),\n' +\
-        '\t' * 7 + '\t\tGEO_BRANCH_AND_LINK(marios_cap_geo),\n' +\
-		'\t' * 7 + '\tGEO_CLOSE_NODE(),' +\
-        '\t' * 7 + 'GEO_CLOSE_NODE(),'
-
-	ukikiPath = os.path.join(basePath, 'actors/ukiki/geo.inc.c')
-	replaceDLReferenceInGeo(ukikiPath, pattern, ukikiReplacement)
-
-	snowmanPath = os.path.join(basePath, 'actors/snowman/geo.inc.c')
-	replaceDLReferenceInGeo(snowmanPath, pattern, snowmanReplacement)
-
-	kleptoPath = os.path.join(basePath, 'actors/klepto/geo.inc.c')
-	replaceDLReferenceInGeo(kleptoPath, kleptoPattern, kleptoReplacement)
-
 def replaceDLReferenceInGeo(geoPath, pattern, replacement):
 	if not os.path.exists(geoPath):
 		return
@@ -221,34 +144,33 @@ def convertObjectToGeolayout(obj, convertTransformMatrix,
 	f3dType, isHWv1, camera, name, fModel, areaObj, DLFormat, convertTextureData):
 	
 	if fModel is None:
-		fModel = FModel(f3dType, isHWv1, name, DLFormat)
+		fModel = Model(f3dType, name)
+		#fModel = FModel(f3dType, isHWv1, name, DLFormat)
 	
 	#convertTransformMatrix = convertTransformMatrix @ \
 	#	mathutils.Matrix.Diagonal(obj.scale).to_4x4()
 
 	# Start geolayout
 	if areaObj is not None:
-		geolayoutGraph = GeolayoutGraph(name)
+		#geolayoutGraph = GeolayoutGraph(name)
 		#cameraObj = getCameraObj(camera)
-		meshGeolayout = saveCameraSettingsToGeolayout(
-			geolayoutGraph, areaObj, obj, name + '_geo')
+		#meshGeolayout = saveCameraSettingsToGeolayout(
+		#	geolayoutGraph, areaObj, obj, name + '_geo')
 		rootObj = areaObj
 		fModel.global_data.fog_color = areaObj.area_fog_color
 		fModel.global_data.fog_position = areaObj.area_fog_position
 	else:
-		geolayoutGraph = GeolayoutGraph(name + '_geo')
-		rootNode = TransformNode(StartNode())
-		geolayoutGraph.startGeolayout.nodes.append(rootNode)
-		meshGeolayout = geolayoutGraph.startGeolayout
+		#geolayoutGraph = GeolayoutGraph(name + '_geo')
+		#rootNode = TransformNode(StartNode())
+		#geolayoutGraph.startGeolayout.nodes.append(rootNode)
+		#meshGeolayout = geolayoutGraph.startGeolayout
 		rootObj = obj
 
 	# Duplicate objects to apply scale / modifiers / linked data
 	tempObj, allObjs = \
 		duplicateHierarchy(rootObj, 'ignore_render', True, None if areaObj is None else areaObj.areaIndex)
 	try:
-		processMesh(fModel, tempObj, convertTransformMatrix,
-			meshGeolayout.nodes[0], geolayoutGraph.startGeolayout,
-			geolayoutGraph, True, convertTextureData)
+		processMesh(fModel, tempObj, convertTransformMatrix, None, convertTextureData)
 		cleanupDuplicatedObjects(allObjs)
 		rootObj.select_set(True)
 		bpy.context.view_layer.objects.active = rootObj
@@ -258,11 +180,11 @@ def convertObjectToGeolayout(obj, convertTransformMatrix,
 		bpy.context.view_layer.objects.active = rootObj
 		raise Exception(str(e))
 
-	appendRevertToGeolayout(geolayoutGraph, fModel)
-	geolayoutGraph.generateSortedList()
-	if DLFormat == "SM64 Function Node":
-		geolayoutGraph.convertToDynamic()
-	return geolayoutGraph, fModel
+	# appendRevertToGeolayout(geolayoutGraph, fModel)
+	#geolayoutGraph.generateSortedList()
+	#if DLFormat == "SM64 Function Node":
+	#	geolayoutGraph.convertToDynamic()
+	return fModel
 
 # C Export
 def exportGeolayoutArmatureC(armatureObj, obj, convertTransformMatrix, 
@@ -271,19 +193,19 @@ def exportGeolayoutArmatureC(armatureObj, obj, convertTransformMatrix,
 	geolayoutGraph, fModel = convertArmatureToGeolayout(armatureObj, obj,
 		convertTransformMatrix, f3dType, isHWv1, camera, dirName, DLFormat, not savePNG)
 
-	return saveGeolayoutC(geoName, dirName, geolayoutGraph, fModel, dirPath, texDir, 
+	return saveGeolayoutC(geoName, dirName, fModel, dirPath, texDir, 
 		savePNG, texSeparate, groupName, headerType, levelName, customExport, DLFormat)
 
-def exportGeolayoutObjectC(obj, convertTransformMatrix, 
+def exportModelFromMesh(obj, convertTransformMatrix, 
 	f3dType, isHWv1, dirPath, texDir, savePNG, texSeparate, camera, groupName, 
 	headerType, dirName, geoName, levelName, customExport, DLFormat):
-	geolayoutGraph, fModel = convertObjectToGeolayout(obj, 
+	fModel = convertObjectToGeolayout(obj, 
 		convertTransformMatrix, f3dType, isHWv1, camera, dirName, None, None, DLFormat, not savePNG)
 
-	return saveGeolayoutC(geoName, dirName, geolayoutGraph, fModel, dirPath, texDir, 
+	return saveGeolayoutC(geoName, dirName, fModel, dirPath, texDir, 
 		savePNG, texSeparate, groupName, headerType, levelName, customExport, DLFormat)
 
-def saveGeolayoutC(geoName, dirName, geolayoutGraph, fModel, exportDir, texDir, savePNG,
+def saveGeolayoutC(geoName, dirName, fModel, exportDir, texDir, savePNG,
  	texSeparate, groupName, headerType, levelName, customExport, DLFormat):
 	dirPath, texDir = getExportDir(customExport, exportDir, headerType, 
 		levelName, texDir, dirName)
@@ -299,45 +221,38 @@ def saveGeolayoutC(geoName, dirName, geolayoutGraph, fModel, exportDir, texDir, 
 		scrollName = 'actor_geo_' + dirName
 	elif headerType == 'Level':
 		scrollName = levelName + '_level_geo_' + dirName
-	static_data, dynamic_data, texC, scroll_data = fModel.to_c(texSeparate, savePNG, texDir, scrollName)
-	cDefineStatic, cDefineDynamic, cDefineScroll = fModel.to_c_def(scrollName)
-	geolayoutGraph.startGeolayout.name = geoName
-
-	# Handle cases where geolayout name != folder name + _geo
-	#if dirName == 'blue_fish':
-	#	geolayoutGraph.startGeolayout.name = 'fish_geo'
-	#if dirName == 'bomb':
-	#	geolayoutGraph.startGeolayout.name = 'bowser_bomb_geo'
-	#if dirName == 'book':
-	#	geolayoutGraph.startGeolayout.name = 'bookend_geo'
-	#if dirName == 'bookend':
-	#	geolayoutGraph.startGeolayout.name = 'bookend_part_geo'
-	#if dirName == 'bowser_flame':
-	#	geolayoutGraph.startGeolayout.name = 'bowser_flames_geo'
-	#if dirName == 'capswitch':
-	#	geolayoutGraph.startGeolayout.name = 'cap_switch_geo'
-	geoData = geolayoutGraph.to_c()
+	#static_data, dynamic_data, texC, scroll_data = fModel.to_c(texSeparate, savePNG, texDir, scrollName)
+	static_data = fModel.to_c()
+	dynamic_data = ''
+	texC = ''
+	scroll_data = ''
+	#cDefineStatic, cDefineDynamic, cDefineScroll = fModel.to_c_def(scrollName)
+	cDefineStatic = ''
+	cDefineDynamic = ''
+	cDefineScroll = ''
+	#geolayoutGraph.startGeolayout.name = geoName
+	#geoData = geolayoutGraph.to_c()
 
 	if headerType == 'Actor':
-		matCInclude = '#include "actors/' + dirName + '/material.inc.c"'
-		matHInclude = '#include "actors/' + dirName + '/material.inc.h"'
-		headerInclude = '#include "actors/' + dirName + '/geo_header.h"'
+		matCInclude = '#include "assets/' + dirName + '/material.inc.c"'
+		matHInclude = '#include "assets/' + dirName + '/material.inc.h"'
+		headerInclude = '#include "assets/' + dirName + '/geo_header.h"'
 
 		if not customExport:
 			# Group name checking, before anything is exported to prevent invalid state on error.
 			if groupName == '' or groupName is None:
 				raise PluginError("Actor header type chosen but group name not provided.")
 
-			groupPathC = os.path.join(dirPath, groupName + ".c")
-			groupPathGeoC = os.path.join(dirPath, groupName + "_geo.c")
-			groupPathH = os.path.join(dirPath, groupName + ".h")
+			# groupPathC = os.path.join(dirPath, groupName + ".c")
+			# groupPathGeoC = os.path.join(dirPath, groupName + "_geo.c")
+			# groupPathH = os.path.join(dirPath, groupName + ".h")
 
-			if not os.path.exists(groupPathC):
-				raise PluginError(groupPathC + ' not found.\n Most likely issue is that \"' + groupName + '\" is an invalid group name.')
-			elif not os.path.exists(groupPathGeoC):
-				raise PluginError(groupPathGeoC + ' not found.\n Most likely issue is that \"' + groupName + '\" is an invalid group name.')
-			elif not os.path.exists(groupPathH):
-				raise PluginError(groupPathH + ' not found.\n Most likely issue is that \"' + groupName + '\" is an invalid group name.')
+			# if not os.path.exists(groupPathC):
+			# 	raise PluginError(groupPathC + ' not found.\n Most likely issue is that \"' + groupName + '\" is an invalid group name.')
+			# elif not os.path.exists(groupPathGeoC):
+			# 	raise PluginError(groupPathGeoC + ' not found.\n Most likely issue is that \"' + groupName + '\" is an invalid group name.')
+			# elif not os.path.exists(groupPathH):
+			# 	raise PluginError(groupPathH + ' not found.\n Most likely issue is that \"' + groupName + '\" is an invalid group name.')
 
 	else:
 		matCInclude = '#include "levels/' + levelName + '/' + dirName + '/material.inc.c"'
@@ -347,13 +262,13 @@ def saveGeolayoutC(geoName, dirName, geolayoutGraph, fModel, exportDir, texDir, 
 	if not bpy.context.scene.disableScroll:
 		writeTexScrollFiles(exportDir, geoDirPath, cDefineScroll, scroll_data)
 	
-	if DLFormat == "Static":
-		static_data += '\n' + dynamic_data
-		cDefineStatic = geolayoutGraph.to_c_def() + cDefineStatic + cDefineDynamic
-	else:
-		geoData = writeMaterialFiles(exportDir, geoDirPath, 
-			headerInclude, matHInclude,
-			cDefineDynamic, dynamic_data, geoData, customExport)
+	#if DLFormat == "Static":
+	static_data += '\n' + dynamic_data
+	cDefineStatic = '' #geolayoutGraph.to_c_def() + cDefineStatic + cDefineDynamic
+	#else:
+	#	geoData = writeMaterialFiles(exportDir, geoDirPath, 
+	#		headerInclude, matHInclude,
+	#		cDefineDynamic, dynamic_data, geoData, customExport)
 
 	modelPath = os.path.join(geoDirPath, 'model.inc.c')
 	modelFile = open(modelPath, 'w', newline='\n')
@@ -366,13 +281,13 @@ def saveGeolayoutC(geoName, dirName, geolayoutGraph, fModel, exportDir, texDir, 
 		texFile.write(texC)
 		texFile.close()
 
-	fModel.freePalettes()
+	#fModel.freePalettes()
 
 	# save geolayout
-	geoPath = os.path.join(geoDirPath, 'geo.inc.c')
-	geoFile = open(geoPath, 'w', newline='\n')
-	geoFile.write(geoData)
-	geoFile.close()
+	#geoPath = os.path.join(geoDirPath, 'geo.inc.c')
+	#geoFile = open(geoPath, 'w', newline='\n')
+	#geoFile.write(geoData)
+	#geoFile.close()
 
 	# save header
 	headerPath = os.path.join(geoDirPath, 'geo_header.h')
@@ -380,246 +295,51 @@ def saveGeolayoutC(geoName, dirName, geolayoutGraph, fModel, exportDir, texDir, 
 	cDefFile.write(cDefineStatic)
 	cDefFile.close()
 	
-	if not customExport:
-		if headerType == 'Actor':
-			if dirName == 'star' and bpy.context.scene.replaceStarRefs:
-				replaceStarReferences(exportDir)
-			if dirName == 'transparent_star' and bpy.context.scene.replaceTransparentStarRefs:
-				replaceTransparentStarReferences(exportDir)
-			if dirName == 'marios_cap' and bpy.context.scene.replaceCapRefs:
-				replaceCapReferences(exportDir)
+	#if not customExport:
+	#	if headerType == 'Actor':
+	#		# Write to group files
+	#		# groupPathC = os.path.join(dirPath, groupName + ".c")
+	#		# groupPathGeoC = os.path.join(dirPath, groupName + "_geo.c")
+	#		# groupPathH = os.path.join(dirPath, groupName + ".h")
+#
+	#		# writeIfNotFound(groupPathC, '\n#include "' + dirName + '/model.inc.c"', '')
+	#		# writeIfNotFound(groupPathGeoC, '\n#include "' + dirName + '/geo.inc.c"', '')
+	#		# writeIfNotFound(groupPathH, '\n#include "' + dirName + '/geo_header.h"', '\n#endif')
+#
+	#		texscrollIncludeC = '#include "assets/' + dirName + '/texscroll.inc.c"'
+	#		texscrollIncludeH = '#include "assets/' + dirName + '/texscroll.inc.h"'
+	#		texscrollGroup = groupName
+	#		texscrollGroupInclude = '#include "assets/' + groupName + '.h"'
+#
+	#	elif headerType == 'Level':
+	#		# groupPathC = os.path.join(dirPath, "leveldata.c")
+	#		# groupPathGeoC = os.path.join(dirPath, "geo.c")
+	#		# groupPathH = os.path.join(dirPath, "header.h")
+#
+	#		# writeIfNotFound(groupPathC, '\n#include "levels/' + levelName + '/' + dirName + '/model.inc.c"', '')
+	#		# writeIfNotFound(groupPathGeoC, '\n#include "levels/' + levelName + '/' + dirName + '/geo.inc.c"', '')
+	#		# writeIfNotFound(groupPathH, '\n#include "levels/' + levelName + '/' + dirName + '/geo_header.h"', '\n#endif')
+#
+	#		texscrollIncludeC = '#include "levels/' + levelName + '/' + dirName + '/texscroll.inc.c"'
+	#		texscrollIncludeH = '#include "levels/' + levelName + '/' + dirName + '/texscroll.inc.h"'
+	#		texscrollGroup = levelName
+	#		texscrollGroupInclude = '#include "levels/' + levelName + '/header.h"'
+#
+	#	if not bpy.context.scene.disableScroll:
+	#		writeTexScrollHeadersGroup(exportDir, texscrollIncludeC, texscrollIncludeH, 
+	#			texscrollGroup, cDefineScroll, texscrollGroupInclude)
+	#	
+	#	if DLFormat != "Static": # Change this
+	#		writeMaterialHeaders(exportDir, matCInclude, matHInclude)
 
-			'''
-			capPath = os.path.join(exportDir, 'actors/mario_cap/geo.inc.c')
-			if dirName == 'marios_cap' and bpy.context.scene.modifyOldGeo:
-				replaceDLReferenceInGeo(capPath, 'marios\_cap\_geo\[\]', 'marios_cap_geo_old[]')
-			if dirName == 'marios_metal_cap' and bpy.context.scene.modifyOldGeo:
-				replaceDLReferenceInGeo(capPath, 'marios\_metal\_cap\_geo\[\]', 'marios_metal_cap_geo_old[]')
-			if dirName == 'marios_wing_cap' and bpy.context.scene.modifyOldGeo:
-				replaceDLReferenceInGeo(capPath, 'marios\_wing\_cap\_geo\[\]', 'marios_wing_cap_geo_old[]')
-			if dirName == 'marios_winged_metal_cap' and bpy.context.scene.modifyOldGeo:
-				replaceDLReferenceInGeo(capPath, 'marios\_winged\_metal\_cap\_geo\[\]', 'marios_winged_metal_cap_geo_old[]')
-
-			koopaPath = os.path.join(exportDir, 'actors/koopa/geo.inc.c')
-			if dirName == 'koopa_with_shell' and bpy.context.scene.modifyOldGeo:
-				replaceDLReferenceInGeo(koopaPath, 'koopa\_with\_shell\_geo\[\]', 'koopa_with_shell_old[]')
-			if dirName == 'koopa_without_shell' and bpy.context.scene.modifyOldGeo:
-				replaceDLReferenceInGeo(koopaPath, 'koopa\_without\_shell\_geo\[\]', 'koopa_without_shell_old[]')
-
-			bobombPath = os.path.join(exportDir, 'actors/bobomb/geo.inc.c')
-			if dirName == 'black_bobomb' and bpy.context.scene.modifyOldGeo:
-				replaceDLReferenceInGeo(bobombPath, 'black\_bobomb\_geo\[\]', 'black\_bobomb\_geo\_old\[\]')
-			if dirName == 'bobomb_buddy' and bpy.context.scene.modifyOldGeo:
-				replaceDLReferenceInGeo(bobombPath, 'bobomb\_buddy\_geo\[\]', 'bobomb\_buddy\_geo\_old\[\]')
-
-			bubblePath = os.path.join(exportDir, 'actors/bubble/geo.inc.c')
-			if dirName == 'purple_marble' and bpy.context.scene.modifyOldGeo:
-				replaceDLReferenceInGeo(bubblePath, 'purple\_marble\_geo\[\]', 'purple\_marble\_geo\_old\[\]')
-			
-			# Instances where a geo file has multiple similar geolayouts
-			if dirName == 'bowser':
-				appendSecondaryGeolayout(geoDirPath, 'bowser', 'bowser2')
-			if dirName == 'bowling_ball':
-				appendSecondaryGeolayout(geoDirPath, 'bowling_ball', 'bowling_ball_track')
-			if dirName == 'blue_fish':
-				appendSecondaryGeolayout(geoDirPath, 'fish', 'fish_shadow', 'GEO_SHADOW(SHADOW_CIRCLE_4_VERTS, 0x9B, 50)')
-			if dirName == 'bowser_key':
-				appendSecondaryGeolayout(geoDirPath, 'bowser_key', 'bowser_key_cutscene')
-			if dirName == 'breakable_box':
-				appendSecondaryGeolayout(geoDirPath, 'breakable_box', 'breakable_box_small')
-			if dirName == 'bully':
-				appendSecondaryGeolayout(geoDirPath, 'bully', 'bully_boss', 'GEO_SCALE(0x00, 0x2000), GEO_NODE_OPEN(),')
-			'''
-
-			# Write to group files
-			groupPathC = os.path.join(dirPath, groupName + ".c")
-			groupPathGeoC = os.path.join(dirPath, groupName + "_geo.c")
-			groupPathH = os.path.join(dirPath, groupName + ".h")
-
-			writeIfNotFound(groupPathC, '\n#include "' + dirName + '/model.inc.c"', '')
-			writeIfNotFound(groupPathGeoC, '\n#include "' + dirName + '/geo.inc.c"', '')
-			writeIfNotFound(groupPathH, '\n#include "' + dirName + '/geo_header.h"', '\n#endif')
-
-			texscrollIncludeC = '#include "actors/' + dirName + '/texscroll.inc.c"'
-			texscrollIncludeH = '#include "actors/' + dirName + '/texscroll.inc.h"'
-			texscrollGroup = groupName
-			texscrollGroupInclude = '#include "actors/' + groupName + '.h"'
-
-		elif headerType == 'Level':
-			groupPathC = os.path.join(dirPath, "leveldata.c")
-			groupPathGeoC = os.path.join(dirPath, "geo.c")
-			groupPathH = os.path.join(dirPath, "header.h")
-
-			writeIfNotFound(groupPathC, '\n#include "levels/' + levelName + '/' + dirName + '/model.inc.c"', '')
-			writeIfNotFound(groupPathGeoC, '\n#include "levels/' + levelName + '/' + dirName + '/geo.inc.c"', '')
-			writeIfNotFound(groupPathH, '\n#include "levels/' + levelName + '/' + dirName + '/geo_header.h"', '\n#endif')
-
-			texscrollIncludeC = '#include "levels/' + levelName + '/' + dirName + '/texscroll.inc.c"'
-			texscrollIncludeH = '#include "levels/' + levelName + '/' + dirName + '/texscroll.inc.h"'
-			texscrollGroup = levelName
-			texscrollGroupInclude = '#include "levels/' + levelName + '/header.h"'
-
-		if not bpy.context.scene.disableScroll:
-			writeTexScrollHeadersGroup(exportDir, texscrollIncludeC, texscrollIncludeH, 
-				texscrollGroup, cDefineScroll, texscrollGroupInclude)
-		
-		if DLFormat != "Static": # Change this
-			writeMaterialHeaders(exportDir, matCInclude, matHInclude)
-
-	if savePNG:
-		if not customExport and headerType == 'Level':
-			fModel.save_textures(dirPath)
-		else:
-			fModel.save_textures(geoDirPath)
+	#if savePNG:
+	#	if not customExport and headerType == 'Level':
+	#		fModel.save_textures(dirPath)
+	#	else:
+	#		fModel.save_textures(geoDirPath)
 	
 	return cDefineStatic
 
-
-# Insertable Binary
-def exportGeolayoutArmatureInsertableBinary(armatureObj, obj,
-	convertTransformMatrix, f3dType, isHWv1, filepath, camera):
-	geolayoutGraph, fModel = convertArmatureToGeolayout(armatureObj, obj,
-		convertTransformMatrix, f3dType, isHWv1, camera, armatureObj.name, "Static", True)
-	
-	saveGeolayoutInsertableBinary(geolayoutGraph, fModel, filepath, f3dType)
-
-def exportGeolayoutObjectInsertableBinary(obj, convertTransformMatrix, 
-	f3dType, isHWv1, filepath, camera):
-	geolayoutGraph, fModel = convertObjectToGeolayout(obj, 
-		convertTransformMatrix, f3dType, isHWv1, camera, obj.name, None, None, "Static", True)
-	
-	saveGeolayoutInsertableBinary(geolayoutGraph, fModel, filepath, f3dType)
-
-def saveGeolayoutInsertableBinary(geolayoutGraph, fModel, filepath, f3d):
-	data, startRAM = \
-		getBinaryBank0GeolayoutData(fModel, geolayoutGraph, 0, [0, 0xFFFFFF])
-	
-	address_ptrs = geolayoutGraph.get_ptr_addresses()
-	address_ptrs.extend(fModel.get_ptr_addresses(f3d))
-
-	writeInsertableFile(filepath, insertableBinaryTypes['Geolayout'],
-		address_ptrs, geolayoutGraph.startGeolayout.startAddress, data)
-
-
-# Binary Bank 0 Export
-def exportGeolayoutArmatureBinaryBank0(romfile, armatureObj, obj, exportRange,	
- 	convertTransformMatrix, levelCommandPos, modelID, textDumpFilePath, 
-	f3dType, isHWv1, RAMAddr, camera):
-	
-	geolayoutGraph, fModel = convertArmatureToGeolayout(armatureObj, obj,
-		convertTransformMatrix, f3dType, isHWv1, camera, armatureObj.name, "Static", True)
-	
-	return saveGeolayoutBinaryBank0(romfile, fModel, geolayoutGraph,
-		exportRange, levelCommandPos, modelID, textDumpFilePath, RAMAddr)
-
-def exportGeolayoutObjectBinaryBank0(romfile, obj, exportRange,	
- 	convertTransformMatrix, levelCommandPos, modelID, textDumpFilePath, 
-	f3dType, isHWv1, RAMAddr, camera):
-	
-	geolayoutGraph, fModel = convertObjectToGeolayout(obj, 
-		convertTransformMatrix, f3dType, isHWv1, camera, obj.name, None, None, "Static", True)
-	
-	return saveGeolayoutBinaryBank0(romfile, fModel, geolayoutGraph,
-		exportRange, levelCommandPos, modelID, textDumpFilePath, RAMAddr)
-
-def saveGeolayoutBinaryBank0(romfile, fModel, geolayoutGraph, exportRange,	
- 	levelCommandPos, modelID, textDumpFilePath, RAMAddr):
-	data, startRAM = getBinaryBank0GeolayoutData(
-		fModel, geolayoutGraph, RAMAddr, exportRange)
-	segmentData = copy.copy(bank0Segment)
-
-	startAddress = get64bitAlignedAddr(exportRange[0])
-	romfile.seek(startAddress)
-	romfile.write(data)
-
-	geoStart = geolayoutGraph.startGeolayout.startAddress
-	segPointerData = encodeSegmentedAddr(geoStart, segmentData)
-	geoWriteLevelCommand(romfile, segPointerData, levelCommandPos, modelID)
-	geoWriteTextDump(textDumpFilePath, geolayoutGraph, segmentData)
-	
-	return ((startAddress, startAddress + len(data)), startRAM + 0x80000000,
-		geoStart + 0x80000000)
-	
-def getBinaryBank0GeolayoutData(fModel, geolayoutGraph, RAMAddr, exportRange):
-	fModel.freePalettes()
-	segmentData = copy.copy(bank0Segment)
-	startRAM = get64bitAlignedAddr(RAMAddr)
-	nonGeoStartAddr = startRAM + geolayoutGraph.size()
-
-	geolayoutGraph.set_addr(startRAM)
-	addrRange = fModel.set_addr(nonGeoStartAddr)
-	addrEndInROM = addrRange[1] - startRAM + exportRange[0]
-	if addrEndInROM > exportRange[1]:
-		raise PluginError('Size too big: Data ends at ' + hex(addrEndInROM) +\
-			', which is larger than the specified range.')
-	bytesIO = BytesIO()
-	#actualRAMAddr = get64bitAlignedAddr(RAMAddr)
-	geolayoutGraph.save_binary(bytesIO, segmentData)
-	fModel.save_binary(bytesIO, segmentData)
-
-	data = bytesIO.getvalue()[startRAM:]
-	bytesIO.close()
-	return data, startRAM
-	
-
-# Binary Export
-def exportGeolayoutArmatureBinary(romfile, armatureObj, obj, exportRange,	
- 	convertTransformMatrix, levelData, levelCommandPos, modelID,
-	textDumpFilePath, f3dType, isHWv1, camera):
-
-	geolayoutGraph, fModel = convertArmatureToGeolayout(armatureObj, obj,
-		convertTransformMatrix, f3dType, isHWv1, camera, armatureObj.name, "Static", True)
-
-	return saveGeolayoutBinary(romfile, geolayoutGraph, fModel, exportRange,	
- 		levelData, levelCommandPos, modelID, textDumpFilePath)
-
-def exportGeolayoutObjectBinary(romfile, obj, exportRange,	
- 	convertTransformMatrix, levelData, levelCommandPos, modelID,
-	textDumpFilePath, f3dType, isHWv1, camera):
-	
-	geolayoutGraph, fModel = convertObjectToGeolayout(obj, 
-		convertTransformMatrix, f3dType, isHWv1, camera, obj.name, None, None, "Static", True)
-	
-	return saveGeolayoutBinary(romfile, geolayoutGraph, fModel, exportRange,	
- 		levelData, levelCommandPos, modelID, textDumpFilePath)
-	
-def saveGeolayoutBinary(romfile, geolayoutGraph, fModel, exportRange,	
- 	levelData, levelCommandPos, modelID, textDumpFilePath):
-	fModel.freePalettes()
-
-	# Get length of data, then actually write it after relative addresses 
-	# are found.
-	startAddress = get64bitAlignedAddr(exportRange[0])
-	nonGeoStartAddr = startAddress + geolayoutGraph.size()
-
-	geolayoutGraph.set_addr(startAddress)
-	addrRange = fModel.set_addr(nonGeoStartAddr)
-	if addrRange[1] > exportRange[1]:
-		raise PluginError('Size too big: Data ends at ' + hex(addrRange[1]) +\
-			', which is larger than the specified range.')
-	geolayoutGraph.save_binary(romfile, levelData)
-	fModel.save_binary(romfile, levelData)
-
-	geoStart = geolayoutGraph.startGeolayout.startAddress
-	segPointerData = encodeSegmentedAddr(geoStart, levelData)
-	geoWriteLevelCommand(romfile, segPointerData, levelCommandPos, modelID)
-	geoWriteTextDump(textDumpFilePath, geolayoutGraph, levelData)
-	
-	return (startAddress, addrRange[1]), bytesToHex(segPointerData)
-
-
-def geoWriteLevelCommand(romfile, segPointerData, levelCommandPos, modelID):
-	if levelCommandPos is not None and modelID is not None:
-		romfile.seek(levelCommandPos + 3)
-		romfile.write(modelID.to_bytes(1, byteorder='big'))
-		romfile.seek(levelCommandPos + 4)
-		romfile.write(segPointerData)
-
-def geoWriteTextDump(textDumpFilePath, geolayoutGraph, levelData):
-	if textDumpFilePath is not None:
-		openfile = open(textDumpFilePath, 'w', newline='\n')
-		openfile.write(geolayoutGraph.toTextDump(levelData))
-		openfile.close()
 
 # Switch Handling Process
 # When convert armature to geolayout node hierarchy, mesh switch options
@@ -806,32 +526,15 @@ def getOptimalNode(translate, rotate, drawLayer, hasDL, zeroTranslation, zeroRot
 
 # This function should be called on a copy of an object
 # The copy will have modifiers / scale applied and will be made single user
-def processMesh(fModel, obj, transformMatrix, parentTransformNode,
-	geolayout, geolayoutGraph, isRoot, convertTextureData):
-	#finalTransform = copy.deepcopy(transformMatrix)
-
-	useGeoEmpty = obj.data is None and \
-		(obj.sm64_obj_type == 'None' or \
-		obj.sm64_obj_type == 'Level Root' or \
-		obj.sm64_obj_type == 'Area Root' or \
-		obj.sm64_obj_type == 'Switch')
-
-	useSwitchNode = obj.data is None and \
-		obj.sm64_obj_type == 'Switch'
-
-	addRooms = isRoot and obj.data is None and \
-		obj.sm64_obj_type == 'Area Root' and \
-		obj.enableRoomSwitch
-		
-	#if useAreaEmpty and areaIndex is not None and obj.areaIndex != areaIndex:
-	#	return
+def processMesh(fModel, obj, transformMatrix, parentBone,
+	convertTextureData):
 		
 	# Its okay to return if ignore_render, because when we duplicated obj hierarchy we stripped all
 	# ignore_renders from geolayout.
 	if not partOfGeolayout(obj) or obj.ignore_render:
 		return
 
-	if isRoot:
+	if parentBone is None:
 		translate = mathutils.Vector((0,0,0))
 		rotate = mathutils.Quaternion()
 	else:
@@ -841,112 +544,19 @@ def processMesh(fModel, obj, transformMatrix, parentTransformNode,
 	zeroRotation = isZeroRotation(rotate)
 	zeroTranslation = isZeroTranslation(translate)
 
-	#translation = mathutils.Matrix.Translation(translate)
-	#rotation = rotate.to_matrix().to_4x4()
+	if obj.data is None:
+		meshGroup = None
+	else:
+		meshGroup = saveStaticModel(fModel, obj, transformMatrix, fModel.name, "Static", convertTextureData, False)
 
-	if useSwitchNode or addRooms: # Specific empty types
-		if useSwitchNode:
-			switchFunc = obj.switchFunc
-			switchParam = obj.switchParam
-		elif addRooms:
-			switchFunc = 'geo_switch_area'
-			switchParam = len(obj.children)
+	curBone = Bone()
+	fModel.addBone(curBone, parentBone)
 
-		# Rooms are not set here (since this is just a copy of the original hierarchy)
-		# They should be set previously, using setRooms()
-		parentTransformNode = addParentNode(parentTransformNode, SwitchNode(switchFunc, switchParam, obj.original_name))
-		alphabeticalChildren = getSwitchChildren(obj)
-		for i in range(len(alphabeticalChildren)):
-			childObj = alphabeticalChildren[i]
-			optionGeolayout = geolayoutGraph.addGeolayout(
-				childObj, fModel.name + '_' + childObj.original_name + '_geo')
-			geolayoutGraph.addJumpNode(parentTransformNode, geolayout,
-				optionGeolayout)
-			if not zeroRotation or not zeroTranslation:
-				startNode = TransformNode(getOptimalNode(translate, rotate, 1, False,
-					zeroTranslation, zeroRotation))
-			else:
-				startNode = TransformNode(StartNode())
-			optionGeolayout.nodes.append(startNode)
-			processMesh(fModel, childObj, transformMatrix, startNode, 
-				optionGeolayout, geolayoutGraph, False, convertTextureData)
+	# Todo bone translation
 
-	else:			
-		if obj.geo_cmd_static == 'Optimal' or useGeoEmpty:
-			node = getOptimalNode(translate, rotate, int(obj.draw_layer_static), True,
-				zeroTranslation, zeroRotation)
-	
-		elif obj.geo_cmd_static == "DisplayListWithOffset":
-			if not zeroRotation:
-				node = DisplayListWithOffsetNode(int(obj.draw_layer_static), True,
-					mathutils.Vector((0,0,0)))	
-	
-				parentTransformNode = addParentNode(parentTransformNode,
-					TranslateRotateNode(1, 0, False, translate, rotate))
-			else:
-				node = DisplayListWithOffsetNode(int(obj.draw_layer_static), True,
-					translate)
-	
-		else: #Billboard
-			if not zeroRotation:
-				node = BillboardNode(int(obj.draw_layer_static), True, 
-					mathutils.Vector((0,0,0)))
-	
-				parentTransformNode = addParentNode(parentTransformNode,
-					TranslateRotateNode(1, 0, False, translate, rotate))
-			else:
-				node = BillboardNode(int(obj.draw_layer_static), True, translate)
-
-
-		transformNode = TransformNode(node)
-
-		additionalNodes = False
-		if obj.data is not None and \
-			(obj.use_render_range or obj.use_render_area or obj.add_shadow or obj.add_func):
-
-			parentTransformNode.children.append(transformNode)
-			transformNode.parent = parentTransformNode
-			transformNode.node.hasDL = False
-			parentTransformNode = transformNode
-
-			node = DisplayListNode(int(obj.draw_layer_static))
-			transformNode = TransformNode(node)
-
-			if obj.use_render_range:
-				parentTransformNode = \
-					addParentNode(parentTransformNode, RenderRangeNode(obj.render_range[0], obj.render_range[1]))
-
-			if obj.use_render_area:
-				parentTransformNode = \
-					addParentNode(parentTransformNode, StartRenderAreaNode(obj.culling_radius))
-
-			if obj.add_shadow:
-				parentTransformNode = \
-					addParentNode(parentTransformNode, ShadowNode(obj.shadow_type, obj.shadow_solidity, obj.shadow_scale))
-
-			if obj.add_func:
-				addParentNode(parentTransformNode, FunctionNode(obj.geo_func, obj.func_param))
-
-			# Make sure to add additional cases to if statement above
-
-		if obj.data is None:
-			meshGroup = None
-		else:
-			meshGroup = saveStaticModel(fModel, obj, transformMatrix, fModel.name, fModel.DLFormat, convertTextureData, False)
-
-		if meshGroup is None:
-			node.hasDL = False
-		else:
-			node.DLmicrocode = meshGroup.mesh.draw
-			node.fMesh = meshGroup.mesh
-
-		parentTransformNode.children.append(transformNode)
-		transformNode.parent = parentTransformNode
-
-		alphabeticalChildren = sorted(obj.children, key = lambda childObj: childObj.original_name)
-		for childObj in alphabeticalChildren:
-			processMesh(fModel, childObj, transformMatrix, transformNode, 
-				geolayout, geolayoutGraph, False, convertTextureData)
+	alphabeticalChildren = sorted(obj.children, key = lambda childObj: childObj.original_name)
+	for childObj in alphabeticalChildren:
+		processMesh(fModel, childObj, transformMatrix, curBone, convertTextureData)
 
 # need to remember last geometry holding parent bone.
 # to do skinning, add the 0x15 command before any non-geometry bone groups.

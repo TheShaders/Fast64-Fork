@@ -44,7 +44,7 @@ enumHUDPaths = {
 
 enumExportHeaderType = [
 	#('None', 'None', 'Headers are not written'),
-	('Actor', 'Actor Data', 'Headers are written to a group in actors/'),
+	('Actor', 'Actor Data', 'Headers are written to a group in assets/'),
 	('Level', 'Level Data', 'Headers are written to a specific level in levels/')
 ]
 
@@ -335,7 +335,7 @@ class Fork_ExportModelFromMesh(bpy.types.Operator):
 				context.scene.geoLevelOption)
 			if not context.scene.geoCustomExport:
 				applyBasicTweaks(exportPath)
-			exportGeolayoutObjectC(obj, finalTransform,
+			exportModelFromMesh(obj, finalTransform,
 				context.scene.f3d_type, context.scene.isHWv1,
 				exportPath,
 				bpy.context.scene.geoTexDir,
@@ -502,18 +502,6 @@ class Fork_ModelExportPanel(bpy.types.Panel):
 					prop_split(col, context.scene, 'geoLevelName', 'Level Name')
 			prop_split(col, context.scene, 'geoName', 'Folder Name')
 			prop_split(col, context.scene, 'geoStructName', 'Model Name')
-			if context.scene.geoExportHeaderType == 'Actor':
-				if context.scene.geoName == 'star':
-					col.prop(context.scene, 'replaceStarRefs')
-				if context.scene.geoName == 'transparent_star':
-					col.prop(context.scene, 'replaceTransparentStarRefs')
-				if context.scene.geoName == 'marios_cap':
-					col.prop(context.scene, 'replaceCapRefs')
-			# infoBox = col.box()
-			# infoBox.label(text = 'If a geolayout file contains multiple actors,')
-			# infoBox.label(text = 'all other actors must also be replaced (with unique folder names)')
-			# infoBox.label(text = 'to prevent compilation errors.')
-			# decompFolderMessage(col)
 			writeBox = makeWriteInfoBox(col)
 			writeBoxExportType(writeBox, context.scene.geoExportHeaderType, 
 				context.scene.geoName, context.scene.geoLevelName,
@@ -1605,7 +1593,7 @@ def register():
 	bpy.types.Scene.geoRAMAddr = bpy.props.StringProperty(name = 'RAM Address', 
 		default = '80000000')
 	bpy.types.Scene.geoTexDir = bpy.props.StringProperty(
-		name ='Include Path', default = 'actors/mario/')
+		name ='Include Path', default = 'assets/mesh/')
 	bpy.types.Scene.geoSaveTextures = bpy.props.BoolProperty(
 		name = 'Save Textures As PNGs (Breaks CI Textures)')
 	bpy.types.Scene.geoSeparateTextureDef = bpy.props.BoolProperty(
@@ -1626,12 +1614,6 @@ def register():
 		default = 'bob')
 	bpy.types.Scene.geoLevelOption = bpy.props.EnumProperty(
 		items = enumLevelNames, name = 'Level', default = 'bob')
-	bpy.types.Scene.replaceStarRefs = bpy.props.BoolProperty(
-		name = 'Replace old DL references in other actors', default = True)
-	bpy.types.Scene.replaceTransparentStarRefs = bpy.props.BoolProperty(
-		name = 'Replace old DL references in other actors', default = True)
-	bpy.types.Scene.replaceCapRefs = bpy.props.BoolProperty(
-		name = 'Replace old DL references in other actors', default = True)
 	bpy.types.Scene.modifyOldGeo = bpy.props.BoolProperty(
 		name = 'Rename old geolayout to avoid conflicts', default = True)
 	bpy.types.Scene.geoStructName = bpy.props.StringProperty(name = 'Geolayout Name',
@@ -1803,9 +1785,6 @@ def unregister():
 	del bpy.types.Scene.geoCustomExport
 	del bpy.types.Scene.geoLevelName
 	del bpy.types.Scene.geoLevelOption
-	del bpy.types.Scene.replaceStarRefs
-	del bpy.types.Scene.replaceTransparentStarRefs
-	del bpy.types.Scene.replaceCapRefs
 	del bpy.types.Scene.modifyOldGeo
 	del bpy.types.Scene.geoStructName
 

@@ -430,8 +430,8 @@ def exportF3DtoC(basePath, obj, DLFormat, transformMatrix,
 		cDefineStatic += cDefineDynamic
 	else:
 		geoString = writeMaterialFiles(basePath, modelDirPath, 
-			'#include "actors/' + toAlnum(name) + '/header.h"', 
-			'#include "actors/' + toAlnum(name) + '/material.inc.h"',
+			'#include "assets/' + toAlnum(name) + '/header.h"', 
+			'#include "assets/' + toAlnum(name) + '/material.inc.h"',
 			cDefineDynamic, dynamic_data, '', customExport)
 
 	if savePNG:
@@ -468,13 +468,13 @@ def exportF3DtoC(basePath, obj, DLFormat, transformMatrix,
 
 			if DLFormat != "Static": # Change this
 				writeMaterialHeaders(basePath, 
-					'#include "actors/' + toAlnum(name) + '/material.inc.c"',
-					'#include "actors/' + toAlnum(name) + '/material.inc.h"')
+					'#include "assets/' + toAlnum(name) + '/material.inc.c"',
+					'#include "assets/' + toAlnum(name) + '/material.inc.h"')
 
-			texscrollIncludeC = '#include "actors/' + name + '/texscroll.inc.c"'
-			texscrollIncludeH = '#include "actors/' + name + '/texscroll.inc.h"'
+			texscrollIncludeC = '#include "assets/' + name + '/texscroll.inc.c"'
+			texscrollIncludeH = '#include "assets/' + name + '/texscroll.inc.h"'
 			texscrollGroup = groupName
-			texscrollGroupInclude = '#include "actors/' + groupName + '.h"'
+			texscrollGroupInclude = '#include "assets/' + groupName + '.h"'
 		
 		elif headerType == 'Level':
 			groupPathC = os.path.join(dirPath, "leveldata.c")
