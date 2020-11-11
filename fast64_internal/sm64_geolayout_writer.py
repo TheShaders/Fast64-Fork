@@ -95,9 +95,9 @@ def appendRevertToGeolayout(geolayoutGraph, fModel):
 
 # Convert to Geolayout
 def convertArmatureToGeolayout(armatureObj, obj, convertTransformMatrix, 
-	f3dType, isHWv1, camera, name, DLFormat, convertTextureData):
+	f3dType, isHWv1, camera, name, modelName, DLFormat, convertTextureData):
 	
-	fModel = FModel(f3dType, isHWv1, name, DLFormat)
+	fModel = Model(f3dType, modelName)
 
 	if len(armatureObj.children) == 0:
 		raise PluginError("No mesh parented to armature.")
@@ -113,38 +113,38 @@ def convertArmatureToGeolayout(armatureObj, obj, convertTransformMatrix,
 		mathutils.Matrix.Diagonal(armatureObj.scale).to_4x4()
 
 	# Start geolayout
-	if camera is not None:
-		geolayoutGraph = GeolayoutGraph(name)
-		cameraObj = getCameraObj(camera)
-		meshGeolayout = saveCameraSettingsToGeolayout(
-			geolayoutGraph, cameraObj, armatureObj, name + "_geo")
-	else:
-		geolayoutGraph = GeolayoutGraph(name + "_geo")
-		rootNode = TransformNode(StartNode())
-		geolayoutGraph.startGeolayout.nodes.append(rootNode)
-		meshGeolayout = geolayoutGraph.startGeolayout
+	#if camera is not None:
+	#	geolayoutGraph = GeolayoutGraph(name)
+	#	cameraObj = getCameraObj(camera)
+	#	meshGeolayout = saveCameraSettingsToGeolayout(
+	#		geolayoutGraph, cameraObj, armatureObj, name + "_geo")
+	#else:
+	#	geolayoutGraph = GeolayoutGraph(name + "_geo")
+	#	rootNode = TransformNode(StartNode())
+	#	geolayoutGraph.startGeolayout.nodes.append(rootNode)
+	#	meshGeolayout = geolayoutGraph.startGeolayout
 	
 	for i in range(len(startBoneNames)):
 		startBoneName = startBoneNames[i]
 		if i > 0:
 			meshGeolayout.nodes.append(TransformNode(StartNode()))
 		processBone(fModel, startBoneName, obj, armatureObj, 
-			convertTransformMatrix, None, None, None, meshGeolayout.nodes[i], 
-			[], name, meshGeolayout, geolayoutGraph, infoDict, convertTextureData)
-	generateSwitchOptions(meshGeolayout.nodes[0], meshGeolayout, geolayoutGraph,
-		name)
-	appendRevertToGeolayout(geolayoutGraph, fModel)
-	geolayoutGraph.generateSortedList()
-	if DLFormat == 'SM64 Function Node':
-		geolayoutGraph.convertToDynamic()
-	return geolayoutGraph, fModel
+			convertTransformMatrix, None, None, None, 
+			[], name, None, infoDict, convertTextureData)
+	#generateSwitchOptions(meshGeolayout.nodes[0], meshGeolayout, geolayoutGraph,
+	#	name)
+	#appendRevertToGeolayout(geolayoutGraph, fModel)
+	#geolayoutGraph.generateSortedList()
+	#if DLFormat == 'SM64 Function Node':
+	#	geolayoutGraph.convertToDynamic()
+	return fModel
 
 # Camera is unused here
 def convertObjectToGeolayout(obj, convertTransformMatrix, 
-	f3dType, isHWv1, camera, name, fModel, areaObj, DLFormat, convertTextureData):
+	f3dType, isHWv1, camera, name, modelName, fModel, areaObj, DLFormat, convertTextureData):
 	
 	if fModel is None:
-		fModel = Model(f3dType, name)
+		fModel = Model(f3dType, modelName)
 		#fModel = FModel(f3dType, isHWv1, name, DLFormat)
 	
 	#convertTransformMatrix = convertTransformMatrix @ \
@@ -190,8 +190,8 @@ def convertObjectToGeolayout(obj, convertTransformMatrix,
 def exportGeolayoutArmatureC(armatureObj, obj, convertTransformMatrix, 
 	f3dType, isHWv1, dirPath, texDir, savePNG, texSeparate, camera, groupName, 
 	headerType, dirName, geoName, levelName, customExport, DLFormat):
-	geolayoutGraph, fModel = convertArmatureToGeolayout(armatureObj, obj,
-		convertTransformMatrix, f3dType, isHWv1, camera, dirName, DLFormat, not savePNG)
+	fModel = convertArmatureToGeolayout(armatureObj, obj,
+		convertTransformMatrix, f3dType, isHWv1, camera, dirName, geoName, DLFormat, not savePNG)
 
 	return saveGeolayoutC(geoName, dirName, fModel, dirPath, texDir, 
 		savePNG, texSeparate, groupName, headerType, levelName, customExport, DLFormat)
@@ -200,7 +200,7 @@ def exportModelFromMesh(obj, convertTransformMatrix,
 	f3dType, isHWv1, dirPath, texDir, savePNG, texSeparate, camera, groupName, 
 	headerType, dirName, geoName, levelName, customExport, DLFormat):
 	fModel = convertObjectToGeolayout(obj, 
-		convertTransformMatrix, f3dType, isHWv1, camera, dirName, None, None, DLFormat, not savePNG)
+		convertTransformMatrix, f3dType, isHWv1, camera, dirName, geoName, None, None, DLFormat, not savePNG)
 
 	return saveGeolayoutC(geoName, dirName, fModel, dirPath, texDir, 
 		savePNG, texSeparate, groupName, headerType, levelName, customExport, DLFormat)
@@ -576,8 +576,8 @@ def processMesh(fModel, obj, transformMatrix, parentBone,
 # relative to the root bone of the armature.
 
 def processBone(fModel, boneName, obj, armatureObj, transformMatrix,
-	lastTranslateName, lastRotateName, lastDeformName, parentTransformNode,
-	materialOverrides, namePrefix, geolayout, geolayoutGraph, infoDict, convertTextureData):
+	lastTranslateName, lastRotateName, lastDeformName,
+	materialOverrides, namePrefix, parentBone, infoDict, convertTextureData):
 	bone = armatureObj.data.bones[boneName]
 	poseBone = armatureObj.pose.bones[boneName]
 	boneGroup = poseBone.bone_group
@@ -605,280 +605,146 @@ def processBone(fModel, boneName, obj, armatureObj, transformMatrix,
 		rotateParent = None
 		rotate = bone.matrix_local.decompose()[1]
 
+	lastTranslateName = boneName
+	lastRotateName = boneName
+
 	translation = mathutils.Matrix.Translation(translate)
 	rotation = rotate.to_matrix().to_4x4()
+	
+	print(boneName)
+	print('  ' + str(finalTransform @ translate))
+	newBone = Bone(finalTransform @ translate)
 
-	#hasDL = bone.use_deform
-	hasDL = True
-	if bone.geo_cmd == 'DisplayListWithOffset':
-		rotAxis, rotAngle = rotate.to_axis_angle()
-		if rotAngle > 0.00001:
-			node = DisplayListWithOffsetNode(int(bone.draw_layer),
-				hasDL, mathutils.Vector((0,0,0)))	
+	curRotation = bone.matrix_local.inverted().decompose()[1].to_matrix().to_4x4()
 
-			parentTransformNode = addParentNode(parentTransformNode, 
-				TranslateRotateNode(1, 0, False, translate, rotate))
+	meshGroup, makeLastDeformBone = saveModelGivenVertexGroup(
+		fModel, obj, bone.name, lastDeformName,
+		finalTransform @ curRotation.inverted(), armatureObj, materialOverrides, 
+		namePrefix, infoDict, bone.draw_layer, convertTextureData)
+	
+	finalTransform = rotation.inverted() @ transformMatrix
 
-			lastTranslateName = boneName
-			lastRotateName = boneName
-		else:
-			node = DisplayListWithOffsetNode(int(bone.draw_layer),
-				hasDL, translate)
-			lastTranslateName = boneName
 		
-		finalTransform = transformMatrix @ translation	
-	
-	elif bone.geo_cmd == 'Function':
-		if bone.geo_func == '':
-			raise PluginError('Function bone ' + boneName + ' function value is empty.')
-		node = FunctionNode(bone.geo_func, bone.func_param)
-	elif bone.geo_cmd == 'HeldObject':
-		if bone.geo_func == '':
-			raise PluginError('Held object bone ' + boneName + ' function value is empty.')
-		node = HeldObjectNode(bone.geo_func, translate)
-	else:
-		if bone.geo_cmd == 'Switch':
-			# This is done so we can easily calculate transforms 
-			# of switch options.
+
+	if meshGroup is not None:
+		if not bone.use_deform:
+			raise PluginError(bone.name + " has vertices in its vertex group but is not set to deformable. Make sure to enable deform on this bone.")
+		if lastDeformName is not None and \
+			armatureObj.data.bones[lastDeformName].geo_cmd == 'SwitchOption' \
+			and meshGroup.skinnedMesh is not None:
+			raise PluginError("Cannot skin geometry to a Switch Option " +\
+				"bone. Skinning cannot occur across a switch node.")
+		newBone.addLayer(bone.draw_layer, meshGroup)
+		lastDeformName = boneName
+		
+	fModel.addBone(newBone, parentBone)
+
+	#print(boneGroup.name if boneGroup is not None else "Offset")
+	if len(bone.children) > 0: 
+		# nextStartNode = TransformNode(StartNode())
+		# transformNode.children.append(nextStartNode)
+		# nextStartNode.parent = transformNode
+
+		childrenNames = sorted([bone.name for bone in bone.children])
+		for name in childrenNames:
+			processBone(fModel, name, obj, armatureObj, 
+				finalTransform, lastTranslateName, lastRotateName, 
+				lastDeformName, materialOverrides, 
+				namePrefix, newBone, infoDict, convertTextureData)
+			#transformNode.children.append(childNode)
+			#childNode.parent = transformNode
+
+	# bone = armatureObj.data.bones[boneName]
+	# for switchIndex in range(len( bone.switch_options)):
+	# 	switchOption = bone.switch_options[switchIndex]
+	# 	if switchOption.switchType == 'Mesh':
+	# 		optionArmature = switchOption.optionArmature
+	# 		if optionArmature is None:
+	# 			raise PluginError('Error: In switch bone ' + boneName +\
+	# 				' for option ' + str(switchIndex) + \
+	# 				', the switch option armature is None.')
+	# 		elif not isinstance(optionArmature.data, bpy.types.Armature):
+	# 			raise PluginError('Error: In switch bone ' + boneName +\
+	# 				' for option ' + str(switchIndex) + \
+	# 				', the object provided is not an armature.')
+	# 		elif optionArmature in geolayoutGraph.secondaryGeolayouts:
+	# 			optionGeolayout = geolayoutGraph.secondaryGeolayouts[
+	# 				optionArmature]
+	# 			geolayoutGraph.addJumpNode(
+	# 				transformNode, geolayout, optionGeolayout)
+	# 			continue
+
+	# 		#optionNode = addParentNode(switchTransformNode, StartNode())
 			
-			if bone.geo_func == '':
-				raise PluginError('Switch bone ' + boneName + \
-					' function value is empty.')
-			node = SwitchNode(bone.geo_func, bone.func_param, boneName)
-			processSwitchBoneMatOverrides(materialOverrides, bone)
+	# 		optionBoneName = getSwitchOptionBone(optionArmature)
+	# 		optionBone = optionArmature.data.bones[optionBoneName]
+
+	# 		# Armature doesn't matter here since node is not based off bone
+	# 		optionGeolayout = \
+	# 			geolayoutGraph.addGeolayout(
+	# 				optionArmature, namePrefix + "_" + optionArmature.name)
+	# 		geolayoutGraph.addJumpNode(transformNode, geolayout, 
+	# 			optionGeolayout)
 			
-		elif bone.geo_cmd == 'Start':
-			node = StartNode()
-		elif bone.geo_cmd == 'TranslateRotate':
-			drawLayer = int(bone.draw_layer)
-			fieldLayout = int(bone.field_layout)
+	# 		rotAxis, rotAngle = rotate.to_axis_angle()
+	# 		if rotAngle > 0.00001 or translate.length > 0.0001:
+	# 			startNode = TransformNode(
+	# 				TranslateRotateNode(1, 0, False, translate, rotate))
+	# 		else:
+	# 			startNode = TransformNode(StartNode())
+	# 		optionGeolayout.nodes.append(startNode)
+
+	# 		childrenNames = sorted(
+	# 			[bone.name for bone in optionBone.children])
+	# 		for name in childrenNames:
+	# 			# We can use optionBone as the last translate/rotate
+	# 			# since we added a TranslateRotate node before
+	# 			# the switch node.
+	# 			optionObjs = []
+	# 			for childObj in optionArmature.children:
+	# 				if isinstance(childObj.data, bpy.types.Mesh):
+	# 					optionObjs.append(childObj)
+	# 			if len(optionObjs) > 1:
+	# 				raise PluginError('Error: In switch bone ' + boneName +\
+	# 				' for option ' + str(switchIndex) + \
+	# 				', the switch option armature has more than one mesh child.')
+	# 			elif len(optionObjs) < 1:
+	# 				raise PluginError('Error: In switch bone ' + boneName +\
+	# 				' for option ' + str(switchIndex) + \
+	# 				', the switch option armature has no mesh children.')
+	# 			optionObj = optionObjs[0]
+	# 			optionObj.data.calc_loop_triangles()
+	# 			optionObj.data.calc_normals_split()
+	# 			optionInfoDict = getInfoDict(optionObj)
+	# 			processBone(fModel, name, optionObj,
+	# 				optionArmature,
+	# 				finalTransform, optionBone.name, optionBone.name,
+	# 				optionBone.name, startNode,
+	# 				materialOverrides, namePrefix + '_' + optionBone.name, 
+	# 				optionGeolayout, geolayoutGraph, optionInfoDict, convertTextureData)
+	# 	else:
+	# 		if switchOption.switchType == 'Material':
+	# 			material = switchOption.materialOverride
+	# 			if switchOption.overrideDrawLayer:
+	# 				drawLayer = int(switchOption.drawLayer)
+	# 			else:
+	# 				drawLayer = None
+	# 			if switchOption.materialOverrideType == 'Specific':
+	# 				specificMat = tuple([matPtr.material for matPtr in \
+	# 					switchOption.specificOverrideArray])
+	# 			else:
+	# 				specificMat = tuple([matPtr.material for matPtr in \
+	# 					switchOption.specificIgnoreArray])
+	# 		else:
+	# 			material = None
+	# 			specificMat = None
+	# 			drawLayer = int(switchOption.drawLayer)
 			
-			node = TranslateRotateNode(drawLayer, fieldLayout, hasDL, 
-				translate, rotate)
-			
-			if node.fieldLayout == 0:
-				finalTransform = transformMatrix @ translation @ rotation
-				lastTranslateName = boneName
-				lastRotateName = boneName
-			elif node.fieldLayout == 1:
-				finalTransform = transformMatrix @ translation
-				lastTranslateName = boneName
-			elif node.fieldLayout == 2:
-				finalTransform = transformMatrix @ rotation
-				lastRotateName = boneName
-			else:
-				yRot = rotate.to_euler().y
-				rotation = mathutils.Euler((0, yRot, 0)).to_matrix().to_4x4()
-				finalTransform = transformMatrix @ rotation
-				lastRotateName = boneName
-			
-		elif bone.geo_cmd == 'Translate':
-			node = TranslateNode(int(bone.draw_layer), hasDL,
-				translate)
-			finalTransform = transformMatrix @ translation
-			lastTranslateName = boneName
-		elif bone.geo_cmd == 'Rotate':
-			node = RotateNode(int(bone.draw_layer), hasDL, rotate)
-			finalTransform = transformMatrix @ rotation
-			lastRotateName = boneName
-		elif bone.geo_cmd == 'Billboard':
-			node = BillboardNode(int(bone.draw_layer), hasDL,
-				translate)
-			finalTransform = transformMatrix @ translation
-			lastTranslateName = boneName
-		elif bone.geo_cmd == 'DisplayList':
-			node = DisplayListNode(int(bone.draw_layer))
-			if not armatureObj.data.bones[boneName].use_deform:
-				raise PluginError("Display List (0x15) " + boneName + ' must be a deform bone. Make sure deform is checked in bone properties.')
-		elif bone.geo_cmd == 'Shadow':
-			shadowType = int(bone.shadow_type)
-			shadowSolidity = bone.shadow_solidity 
-			shadowScale = bone.shadow_scale
-			node = ShadowNode(shadowType, shadowSolidity, shadowScale)
-		elif bone.geo_cmd == 'Scale':
-			node = ScaleNode(int(bone.draw_layer), bone.geo_scale,
-				hasDL)
-			finalTransform = transformMatrix @ \
-				mathutils.Matrix.Scale(node.scaleValue, 4)
-		elif bone.geo_cmd == 'StartRenderArea':
-			node = StartRenderAreaNode(bone.culling_radius)
-		else:
-			raise PluginError("Invalid geometry command: " + bone.geo_cmd)
-	
-	transformNode = TransformNode(node)
-
-	if node.hasDL:
-		meshGroup, makeLastDeformBone = saveModelGivenVertexGroup(
-			fModel, obj, bone.name, lastDeformName,
-			finalTransform, armatureObj, materialOverrides, 
-			namePrefix, infoDict, node.drawLayer, convertTextureData)
-
-		if meshGroup is None:
-			#print("No mesh data.")
-			node.hasDL = False
-			transformNode.skinnedWithoutDL = makeLastDeformBone
-			#bone.use_deform = False
-			if makeLastDeformBone:
-				lastDeformName = boneName
-			parentTransformNode.children.append(transformNode)
-			transformNode.parent = parentTransformNode
-		else:
-			if not bone.use_deform:
-				raise PluginError(bone.name + " has vertices in its vertex group but is not set to deformable. Make sure to enable deform on this bone.")
-			node.DLmicrocode = meshGroup.mesh.draw
-			node.fMesh = meshGroup.mesh # Used for material override switches
-			if lastDeformName is not None and \
-				armatureObj.data.bones[lastDeformName].geo_cmd == 'SwitchOption' \
-				and meshGroup.skinnedMesh is not None:
-				raise PluginError("Cannot skin geometry to a Switch Option " +\
-					"bone. Skinning cannot occur across a switch node.")
-
-
-			transformNode = addSkinnedMeshNode(armatureObj, boneName,
-				meshGroup.skinnedMesh, transformNode, parentTransformNode)
-
-			lastDeformName = boneName
-			#print(boneName)
-	else:
-		parentTransformNode.children.append(transformNode)
-		transformNode.parent = parentTransformNode
-
-	if not isinstance(transformNode.node, SwitchNode):
-		#print(boneGroup.name if boneGroup is not None else "Offset")
-		if len(bone.children) > 0: 
-			#print("\tHas Children")
-			if bone.geo_cmd == 'Function':
-				raise PluginError("Function bones cannot have children. They instead affect the next sibling bone in alphabetical order.")
-
-			# Handle child nodes
-			# nonDeformTransformData should be modified to be sent to children,
-			# otherwise it should not be modified for parent.
-			# This is so it can be used for siblings.
-			childrenNames = sorted([bone.name for bone in bone.children])
-			for name in childrenNames:
-				processBone(fModel, name, obj, armatureObj, 
-					finalTransform, lastTranslateName, lastRotateName, 
-					lastDeformName, transformNode, materialOverrides, 
-					namePrefix, geolayout,
-					geolayoutGraph, infoDict, convertTextureData)
-				#transformNode.children.append(childNode)
-				#childNode.parent = transformNode
-
-	# see generateSwitchOptions() for explanation.
-	else:
-		#print(boneGroup.name if boneGroup is not None else "Offset")
-		if len(bone.children) > 0: 
-			#optionGeolayout = \
-			#	geolayoutGraph.addGeolayout(
-			#		transformNode, boneName + '_opt0')
-			#geolayoutGraph.addJumpNode(transformNode, geolayout, 
-			#	optionGeolayout)
-			#optionGeolayout.nodes.append(TransformNode(StartNode()))
-			nextStartNode = TransformNode(StartNode())
-			transformNode.children.append(nextStartNode)
-			nextStartNode.parent = transformNode
-
-			childrenNames = sorted([bone.name for bone in bone.children])
-			for name in childrenNames:
-				processBone(fModel, name, obj, armatureObj, 
-					finalTransform, lastTranslateName, lastRotateName, 
-					lastDeformName, nextStartNode, materialOverrides, 
-					namePrefix, geolayout,
-					geolayoutGraph, infoDict, convertTextureData)
-				#transformNode.children.append(childNode)
-				#childNode.parent = transformNode
-
-		bone = armatureObj.data.bones[boneName]
-		for switchIndex in range(len( bone.switch_options)):
-			switchOption = bone.switch_options[switchIndex]
-			if switchOption.switchType == 'Mesh':
-				optionArmature = switchOption.optionArmature
-				if optionArmature is None:
-					raise PluginError('Error: In switch bone ' + boneName +\
-						' for option ' + str(switchIndex) + \
-						', the switch option armature is None.')
-				elif not isinstance(optionArmature.data, bpy.types.Armature):
-					raise PluginError('Error: In switch bone ' + boneName +\
-						' for option ' + str(switchIndex) + \
-						', the object provided is not an armature.')
-				elif optionArmature in geolayoutGraph.secondaryGeolayouts:
-					optionGeolayout = geolayoutGraph.secondaryGeolayouts[
-						optionArmature]
-					geolayoutGraph.addJumpNode(
-						transformNode, geolayout, optionGeolayout)
-					continue
-
-				#optionNode = addParentNode(switchTransformNode, StartNode())
-				
-				optionBoneName = getSwitchOptionBone(optionArmature)
-				optionBone = optionArmature.data.bones[optionBoneName]
-
-				# Armature doesn't matter here since node is not based off bone
-				optionGeolayout = \
-					geolayoutGraph.addGeolayout(
-						optionArmature, namePrefix + "_" + optionArmature.name)
-				geolayoutGraph.addJumpNode(transformNode, geolayout, 
-					optionGeolayout)
-				
-				rotAxis, rotAngle = rotate.to_axis_angle()
-				if rotAngle > 0.00001 or translate.length > 0.0001:
-					startNode = TransformNode(
-						TranslateRotateNode(1, 0, False, translate, rotate))
-				else:
-					startNode = TransformNode(StartNode())
-				optionGeolayout.nodes.append(startNode)
-	
-				childrenNames = sorted(
-					[bone.name for bone in optionBone.children])
-				for name in childrenNames:
-					# We can use optionBone as the last translate/rotate
-					# since we added a TranslateRotate node before
-					# the switch node.
-					optionObjs = []
-					for childObj in optionArmature.children:
-						if isinstance(childObj.data, bpy.types.Mesh):
-							optionObjs.append(childObj)
-					if len(optionObjs) > 1:
-						raise PluginError('Error: In switch bone ' + boneName +\
-						' for option ' + str(switchIndex) + \
-						', the switch option armature has more than one mesh child.')
-					elif len(optionObjs) < 1:
-						raise PluginError('Error: In switch bone ' + boneName +\
-						' for option ' + str(switchIndex) + \
-						', the switch option armature has no mesh children.')
-					optionObj = optionObjs[0]
-					optionObj.data.calc_loop_triangles()
-					optionObj.data.calc_normals_split()
-					optionInfoDict = getInfoDict(optionObj)
-					processBone(fModel, name, optionObj,
-						optionArmature,
-						finalTransform, optionBone.name, optionBone.name,
-						optionBone.name, startNode,
-						materialOverrides, namePrefix + '_' + optionBone.name, 
-						optionGeolayout, geolayoutGraph, optionInfoDict, convertTextureData)
-			else:
-				if switchOption.switchType == 'Material':
-					material = switchOption.materialOverride
-					if switchOption.overrideDrawLayer:
-						drawLayer = int(switchOption.drawLayer)
-					else:
-						drawLayer = None
-					if switchOption.materialOverrideType == 'Specific':
-						specificMat = tuple([matPtr.material for matPtr in \
-							switchOption.specificOverrideArray])
-					else:
-						specificMat = tuple([matPtr.material for matPtr in \
-							switchOption.specificIgnoreArray])
-				else:
-					material = None
-					specificMat = None
-					drawLayer = int(switchOption.drawLayer)
-				
-				overrideNode = TransformNode(SwitchOverrideNode(
-					material, specificMat, drawLayer,
-					switchOption.materialOverrideType))
-				overrideNode.parent = transformNode
-				transformNode.children.append(overrideNode)
+	# 		overrideNode = TransformNode(SwitchOverrideNode(
+	# 			material, specificMat, drawLayer,
+	# 			switchOption.materialOverrideType))
+	# 		overrideNode.parent = transformNode
+	# 		transformNode.children.append(overrideNode)
 
 def processSwitchBoneMatOverrides(materialOverrides, switchBone):
 	for switchOption in switchBone.switch_options:
@@ -1142,13 +1008,20 @@ def saveModelGivenVertexGroup(fModel, obj, vertexGroup,
 	
 	currentMatrix = mathutils.Matrix.Scale(1 * bpy.context.scene.blenderToN64Scale, 4) @ \
 		bone.matrix_local.inverted()
+		
+		
+	currentRot = bone.matrix.to_4x4()
+	print('  ' + str(bone.matrix.to_quaternion()))
+	currentMatrix = transformMatrix @ currentRot @ mathutils.Matrix.Translation(bone.matrix_local.decompose()[0]).inverted()
 	
-	if parentGroup is None:
-		parentMatrix = mathutils.Matrix.Scale(1 * bpy.context.scene.blenderToN64Scale, 4)
-	else:
-		parentBone = armatureObj.data.bones[parentGroup]
-		parentMatrix = mathutils.Matrix.Scale(1 * bpy.context.scene.blenderToN64Scale, 4) @ \
-		parentBone.matrix_local.inverted()
+	# if parentGroup is None:
+	# 	parentMatrix = mathutils.Matrix.Scale(1 * bpy.context.scene.blenderToN64Scale, 4)
+	# else:
+	# 	parentBone = armatureObj.data.bones[parentGroup]
+	# 	parentMatrix = mathutils.Matrix.Scale(1 * bpy.context.scene.blenderToN64Scale, 4) @ \
+	# 	parentBone.matrix_local.inverted()
+
+	parentMatrix = transformMatrix
 	
 	# dict of material_index keys to face array values
 	groupFaces = {}
@@ -1441,7 +1314,7 @@ def saveSkinnedMeshByMaterial(skinnedFaces, fModel, name, obj,
 		saveTriangleStrip(
 			[skinnedFace.bFace for skinnedFace in skinnedFaceArray],
 			convertInfo, triGroup.triList, triGroup.vertexList, fModel.f3d, 
-			texDimensions, currentMatrix, isPointSampled, exportVertexColors,
+			texDimensions, parentMatrix, isPointSampled, exportVertexColors,
 			copy.deepcopy(existingVertData), copy.deepcopy(matRegionDict),
 			infoDict, obj.data)
 	

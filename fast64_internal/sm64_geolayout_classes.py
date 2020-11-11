@@ -76,7 +76,7 @@ class Model:
 		dlDefs = ''
 		layerDefs = ''
 		boneDefs = 'Bone ' + self.name + '_bones[] = {\n'
-		modelDef = 'Model ' + self.name + ' = {\n'
+		modelDef =  'Model ' + self.name + ' = {\n'
 		modelDef += '    ' + str(len(self.bones)) + ',\n' # Bone count
 		modelDef += '    0,\n'                       # Reserved
 		modelDef += '    ' + self.name + '_bones\n'  # Bone array pointer

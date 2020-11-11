@@ -318,7 +318,6 @@ class Fork_ExportModelFromMesh(bpy.types.Operator):
 			#levelCamera = context.scene.levelCamera if \
 			#	context.scene.saveCameraSettings else None
 
-			finalTransform = mathutils.Matrix.Identity(4)
 			scaleValue = bpy.context.scene.blenderToN64Scale
 			finalTransform = mathutils.Matrix.Diagonal(mathutils.Vector((
 				scaleValue, scaleValue, scaleValue))).to_4x4()
@@ -328,7 +327,7 @@ class Fork_ExportModelFromMesh(bpy.types.Operator):
 
 		try:
 			# Rotate all armatures 90 degrees
-			applyRotation([obj], math.radians(90), 'X')
+			applyRotation([obj], math.radians(-90), 'X')
 
 			exportPath, levelName = getPathAndLevel(context.scene.geoCustomExport, 
 				context.scene.geoExportPath, context.scene.geoLevelName, 
@@ -346,14 +345,14 @@ class Fork_ExportModelFromMesh(bpy.types.Operator):
 				context.scene.geoName, context.scene.geoStructName, levelName, context.scene.geoCustomExport, "Static")
 			self.report({'INFO'}, 'Success!')
 			
-			applyRotation([obj], math.radians(-90), 'X')
+			applyRotation([obj], math.radians(90), 'X')
 			return {'FINISHED'} # must return a set
 
 		except Exception as e:
 			if context.mode != 'OBJECT':
 				bpy.ops.object.mode_set(mode = 'OBJECT')
 
-			applyRotation([obj], math.radians(-90), 'X')
+			applyRotation([obj], math.radians(90), 'X')
 
 			raisePluginError(self, e)
 			return {'CANCELLED'} # must return a set
@@ -390,7 +389,9 @@ class Fork_ExportModelFromArmature(bpy.types.Operator):
 			#	context.scene.saveCameraSettings else None
 
 			obj = armatureObj.children[0]
-			finalTransform = mathutils.Matrix.Identity(4)
+			scaleValue = bpy.context.scene.blenderToN64Scale
+			finalTransform = mathutils.Matrix.Diagonal(mathutils.Vector((
+				scaleValue, scaleValue, scaleValue))).to_4x4()
 
 			# get all switch option armatures as well
 			linkedArmatures = [armatureObj]
@@ -420,7 +421,7 @@ class Fork_ExportModelFromArmature(bpy.types.Operator):
 		try:
 			# Rotate all armatures 90 degrees
 			applyRotation([armatureObj] + linkedArmatures, 
-				math.radians(90), 'X')
+				math.radians(-90), 'X')
 
 			# You must ALSO apply object rotation after armature rotation.
 			bpy.ops.object.select_all(action = "DESELECT")
@@ -447,7 +448,7 @@ class Fork_ExportModelFromArmature(bpy.types.Operator):
 			self.report({'INFO'}, 'Success!')
 
 			applyRotation([armatureObj] + linkedArmatures, 
-				math.radians(-90), 'X')
+				math.radians(90), 'X')
 
 			return {'FINISHED'} # must return a set
 
@@ -456,7 +457,7 @@ class Fork_ExportModelFromArmature(bpy.types.Operator):
 				bpy.ops.object.mode_set(mode = 'OBJECT')
 			
 			applyRotation([armatureObj] + linkedArmatures, 
-				math.radians(-90), 'X')
+				math.radians(90), 'X')
 
 			if armatureObj is not None:
 				armatureObj.select_set(True)

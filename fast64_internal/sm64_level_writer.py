@@ -522,7 +522,7 @@ def exportLevelC(obj, transformMatrix, f3dType, isHWv1, levelName, exportDir,
 		#geolayoutGraph, fModel = \
 		fModel = \
 			convertObjectToGeolayout(obj, transformMatrix, 
-			f3dType, isHWv1, child.areaCamera, levelName + '_' + areaName, fModel, child, DLFormat, not savePNG)
+			f3dType, isHWv1, child.areaCamera, levelName + '_' + areaName, levelName + '_' + areaName, fModel, child, DLFormat, not savePNG)
 
 		# Write geolayout
 		#geoFile = open(os.path.join(areaDir, 'geo.inc.c'), 'w', newline = '\n')
