@@ -590,8 +590,7 @@ def processBone(fModel, boneName, obj, armatureObj, transformMatrix,
 	# Get translate
 	if lastTranslateName is not None:
 		translateParent = armatureObj.data.bones[lastTranslateName]
-		translate = (translateParent.matrix_local.inverted() @ \
-			bone.matrix_local).decompose()[0]
+		translate = bone.matrix_local.decompose()[0] - translateParent.matrix_local.decompose()[0]
 	else:
 		translateParent = None
 		translate = bone.matrix_local.decompose()[0]
@@ -608,12 +607,9 @@ def processBone(fModel, boneName, obj, armatureObj, transformMatrix,
 	lastTranslateName = boneName
 	lastRotateName = boneName
 
-	translation = mathutils.Matrix.Translation(translate)
 	rotation = rotate.to_matrix().to_4x4()
-	
-	print(boneName)
-	print('  ' + str(finalTransform @ translate))
-	newBone = Bone(finalTransform @ translate)
+
+	newBone = Bone(translate * bpy.context.scene.blenderToN64Scale)
 
 	curRotation = bone.matrix_local.inverted().decompose()[1].to_matrix().to_4x4()
 

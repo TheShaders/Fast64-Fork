@@ -6,6 +6,7 @@ from .sm64_function_map import func_map
 import struct
 import copy
 import collections as ct
+import itertools
 from .f3d_gbi import F3D
 
 drawLayerNames = {
@@ -144,6 +145,140 @@ class Bone:
 			static, dynamic, scroll = curLayer[1].to_c(self.model.f3d)
 			dlDef += static + '\n' + dynamic + '\n'
 		return dlDef
+
+class ModelAnim:
+	def __init__(self, name):
+		self.name = name
+		self.boneTables = []
+		self.loop = False
+
+	def to_c(self):
+		dataDefs = ''
+		tableDef = 'BoneTable ' + self.name + "Tables[] = {\n"
+		frameCount = 0
+
+		for boneTable in self.boneTables:
+			frameCount = max(frameCount, boneTable.getFrameCount())
+			dataDefs += boneTable.data_to_c()
+			tableDef += boneTable.to_c()
+		
+		tableDef += '};\n\n'
+		
+		animDef =  'Animation ' + self.name + ' = {\n'
+		animDef += '    ' + str(frameCount) + ', // frame count\n'
+		animDef += '    ' + str(len(self.boneTables)) + ', // bone count\n'
+		animDef += '    ' + ('ANIM_LOOP' if self.loop else '0') + ', // flags\n'
+		animDef += '    ' + self.name + 'Tables, // bone table array pointer\n'
+		animDef += '    NULL, // trigger array pointer\n' # TODO triggers
+		animDef += '};\n'
+
+		return dataDefs + tableDef + animDef
+	
+	def addBoneData(self, channels):
+		newTable = BoneTable(self.name + "Bone" + str(len(self.boneTables)))
+		for i, curChannel in enumerate(channels):
+			newTable.channels[i] = curChannel
+		self.boneTables.append(newTable)
+
+
+def allEqual(values, eqValue):
+	for curVal in values:
+		if curVal != eqValue:
+			return False
+	return True
+
+defaultChannelValues = [
+						0, 0, 0, # pos
+						0, 0, 0, # rot
+						256, 256, 256 # scale
+					   ]
+
+channelNames = [
+	'PosX',
+	'PosY',
+	'PosZ',
+	'RotX',
+	'RotY',
+	'RotZ',
+	'ScaleX',
+	'ScaleY',
+	'ScaleZ'
+]
+
+channelFlagNames = [
+	'CHANNEL_POS_X',
+	'CHANNEL_POS_Y',
+	'CHANNEL_POS_Z',
+	'CHANNEL_ROT_X',
+	'CHANNEL_ROT_Y',
+	'CHANNEL_ROT_Z',
+	'CHANNEL_SCALE_X',
+	'CHANNEL_SCALE_Y',
+	'CHANNEL_SCALE_Z'
+]
+
+class BoneTable:
+	def __init__(self, name):
+		self.name = name
+		self.channels = [[] for _ in range(9)]
+		self.flags = [False] * 9
+		self.finalized = False
+		self.flagsStr = ''
+
+	def getFrameCount(self):
+		return max(len(curChannel) for curChannel in self.channels)
+
+	def finalize(self):
+		self.flagsStr = ''
+
+		for i, curChannel in enumerate(self.channels):
+			if not allEqual(curChannel, defaultChannelValues[i]):
+				self.flags[i] = True
+				self.flagsStr += channelFlagNames[i] + ' | '
+			else:
+				self.flags[i] = False
+			# self.flags[i] = True
+			# self.flagsStr += channelFlagNames[i] + ' | '
+
+		if self.flagsStr == '':
+			self.flagsStr = '0'
+		else:
+			self.flagsStr = self.flagsStr[:-3] # Remove the last ' | '
+		
+		self.finalized = True
+	
+	def to_c(self):
+		if not self.finalized:
+			self.finalize()
+		
+		ret =  '    {\n'
+		ret += '        ' + self.flagsStr + ',\n'
+		ret += '        ' + ((self.name + 'Tables') if self.flagsStr != '0' else 'NULL') + '\n'
+		ret += '    },\n'
+
+		return ret
+	
+	def data_to_c(self):
+		if not self.finalized:
+			self.finalize()
+		
+		if self.flagsStr == '0':
+			return ''
+		
+		ret =  's16 ' + self.name + 'Tables[] = {\n'
+		for channelIndex, curChannel in enumerate(self.channels):
+			if (self.flags[channelIndex]):
+				ret += '    // ' + channelNames[channelIndex] + '\n'
+				ret += '    '
+				for valIndex, val in enumerate(curChannel):
+					if valIndex > 0 and valIndex % 16 == 0 and valIndex != len(curChannel) - 1:
+						ret += '\n    '
+					ret += '0x' + format(val, '04X') + ', '
+				ret += '\n'
+		ret += '\n'
+		ret += '};\n'
+
+		return ret
 
 class GeolayoutGraph:
 	def __init__(self, name):

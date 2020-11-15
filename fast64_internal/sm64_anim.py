@@ -5,6 +5,7 @@ import re
 from .utility import *
 from .sm64_constants import *
 from math import pi
+from .sm64_geolayout_classes import *
 import os
 import copy
 
@@ -139,12 +140,12 @@ def getLastKeyframeTime(keyframes):
 # add definition to groupN.h
 # add data/table includes to groupN.c (bin_id?)
 # add data/table files
-def exportAnimationC(armatureObj, loopAnim, dirPath, dirName, groupName,
+def exportAnimationC(armatureObj, loopAnim, dirPath, dirName,
 	customExport, headerType, levelName):
 	dirPath, texDir = getExportDir(customExport, dirPath, headerType, 
 		levelName, '', dirName)
 
-	sm64_anim = exportAnimationCommon(armatureObj, loopAnim, dirName + "_anim")
+	modelAnim = exportAnimationCommon(armatureObj, loopAnim, dirName + "_anim")
 	animName = armatureObj.animation_data.action.name
 
 	geoDirPath = os.path.join(dirPath, toAlnum(dirName))
@@ -159,7 +160,7 @@ def exportAnimationC(armatureObj, loopAnim, dirPath, dirName, groupName,
 	animFileName = 'anim_' + toAlnum(animName) + '.inc.c'
 	animPath = os.path.join(animDirPath, animFileName)
 
-	data = sm64_anim.to_c()
+	data = modelAnim.to_c()
 	outFile = open(animPath, 'w', newline='\n')
 	outFile.write(data)
 	outFile.close()
@@ -183,80 +184,30 @@ def exportAnimationC(armatureObj, loopAnim, dirPath, dirName, groupName,
 		tableFile.write('const struct Animation *const ' + \
 			animsName + '[] = {\n\tNULL,\n};\n')
 		tableFile.close()
-	writeIfNotFound(tableFilePath, '\t&' + sm64_anim.header.name + ',\n', '\tNULL,\n};')
+	writeIfNotFound(tableFilePath, '\t&' + modelAnim.name + ',\n', '\tNULL,\n};')
 
-	if not customExport:
-		if headerType == 'Actor':
-			groupPathC = os.path.join(dirPath, groupName + ".c")
-			groupPathH = os.path.join(dirPath, groupName + ".h")
+	# if not customExport:
+	# 	if headerType == 'Actor':
+	# 		groupPathC = os.path.join(dirPath, groupName + ".c")
+	# 		groupPathH = os.path.join(dirPath, groupName + ".h")
 
-			writeIfNotFound(groupPathC, '\n#include "' + dirName + '/anims/data.inc.c"', '')
-			writeIfNotFound(groupPathC, '\n#include "' + dirName + '/anims/table.inc.c"', '')
-			writeIfNotFound(groupPathH, '\n#include "' + dirName + '/anim_header.h"', '#endif')
-		elif headerType == 'Level':
-			groupPathC = os.path.join(dirPath, "leveldata.c")
-			groupPathH = os.path.join(dirPath, "header.h")
+	# 		writeIfNotFound(groupPathC, '\n#include "' + dirName + '/anims/data.inc.c"', '')
+	# 		writeIfNotFound(groupPathC, '\n#include "' + dirName + '/anims/table.inc.c"', '')
+	# 		writeIfNotFound(groupPathH, '\n#include "' + dirName + '/anim_header.h"', '#endif')
+	# 	elif headerType == 'Level':
+	# 		groupPathC = os.path.join(dirPath, "leveldata.c")
+	# 		groupPathH = os.path.join(dirPath, "header.h")
 
-			writeIfNotFound(groupPathC, '\n#include "levels/' + levelName + '/' + dirName + '/anims/data.inc.c"', '')
-			writeIfNotFound(groupPathC, '\n#include "levels/' + levelName + '/' + dirName + '/anims/table.inc.c"', '')
-			writeIfNotFound(groupPathH, '\n#include "levels/' + levelName + '/' + dirName + '/anim_header.h"', '\n#endif')
-
-def exportAnimationBinary(romfile, exportRange, armatureObj, DMAAddresses,
-	segmentData, isDMA, loopAnim):
-
-	startAddress = get64bitAlignedAddr(exportRange[0])
-	sm64_anim = exportAnimationCommon(armatureObj, loopAnim, armatureObj.name)
-
-	animData = sm64_anim.to_binary(segmentData, isDMA, startAddress)
-	
-	if startAddress + len(animData) > exportRange[1]:
-		raise PluginError('Size too big: Data ends at ' + \
-			hex(startAddress + len(animData)) +\
-			', which is larger than the specified range.')
-
-	romfile.seek(startAddress)
-	romfile.write(animData)
-
-	addrRange = (startAddress, startAddress + len(animData))
-
-	if not isDMA:
-		animTablePointer = get64bitAlignedAddr(startAddress + len(animData))
-		romfile.seek(animTablePointer)
-		romfile.write(encodeSegmentedAddr(startAddress, segmentData))
-		return addrRange, animTablePointer
-	else:
-		if DMAAddresses is not None:
-			romfile.seek(DMAAddresses['entry'])
-			romfile.write((startAddress - DMAAddresses['start']).to_bytes(
-				4, byteorder = 'big'))
-			romfile.seek(DMAAddresses['entry'] + 4)
-			romfile.write(len(animData).to_bytes(4, byteorder='big'))
-		return addrRange, None
-
-def exportAnimationInsertableBinary(filepath, armatureObj, isDMA, loopAnim):
-	startAddress = get64bitAlignedAddr(0)
-	sm64_anim = exportAnimationCommon(armatureObj, loopAnim, armatureObj.name)
-	segmentData = copy.copy(bank0Segment)
-
-	animData = sm64_anim.to_binary(segmentData, isDMA, startAddress)
-	
-	if startAddress + len(animData) > 0xFFFFFF:
-		raise PluginError('Size too big: Data ends at ' + \
-			hex(startAddress + len(animData)) +\
-			', which is larger than the specified range.')
-	
-	writeInsertableFile(filepath, insertableBinaryTypes['Animation'],
-		sm64_anim.get_ptr_offsets(isDMA), startAddress, animData)
-	
+	# 		writeIfNotFound(groupPathC, '\n#include "levels/' + levelName + '/' + dirName + '/anims/data.inc.c"', '')
+	# 		writeIfNotFound(groupPathC, '\n#include "levels/' + levelName + '/' + dirName + '/anims/table.inc.c"', '')
+	# 		writeIfNotFound(groupPathH, '\n#include "levels/' + levelName + '/' + dirName + '/anim_header.h"', '\n#endif')
 
 def exportAnimationCommon(armatureObj, loopAnim, name):
 	if armatureObj.animation_data is None or \
 		armatureObj.animation_data.action is None:
 		raise PluginError("No active animation selected.")
 	anim = armatureObj.animation_data.action
-	sm64_anim = SM64_Animation(toAlnum(name + "_" + anim.name))
-
-	nodeCount = len(armatureObj.data.bones)
+	modelAnim = ModelAnim(name + '_' + anim.name)
 		
 	frameInterval = [0,0]
 
@@ -267,52 +218,18 @@ def exportAnimationCommon(armatureObj, loopAnim, name):
 	frameInterval[1] = \
 		max(min(bpy.context.scene.frame_end, 
 			int(round(anim.frame_range[1]))), frameInterval[0]) + 1
-	translationData, armatureFrameData = convertAnimationData(anim, armatureObj, frameInterval[1])
-
-	repetitions = 0 if loopAnim else 1
-	marioYOffset = 0x00 # ??? Seems to be this value for most animations
 	
-	transformValuesOffset = 0
-	headerSize = 0x1A
-	transformIndicesStart = headerSize #0x18 if including animSize?
+	translationData, rotationData, scaleData = convertAnimationData(anim, armatureObj, frameInterval[1])
 
-	# all node rotations + root translation
-	# *3 for each property (xyz) and *4 for entry size
-	# each keyframe stored as 2 bytes
-	# transformValuesStart = transformIndicesStart + (nodeCount + 1) * 3 * 4 
-	transformValuesStart = transformIndicesStart
+	modelAnim.loop = loopAnim
 
-	for translationFrameProperty in translationData:
-		frameCount = len(translationFrameProperty)
-		sm64_anim.indices.shortData.append(frameCount)
-		sm64_anim.indices.shortData.append(transformValuesOffset)
-		if(transformValuesOffset) > 2**16 - 1:
-			raise PluginError('Animation is too large.')
-		transformValuesOffset += frameCount
-		transformValuesStart += 4
-		for value in translationFrameProperty:
-			sm64_anim.values.shortData.append(int.from_bytes(value.to_bytes(2,'big', signed = True), byteorder = 'big', signed = False))
-
-	for boneFrameData in armatureFrameData:
-		for boneFrameDataProperty in boneFrameData:
-			frameCount = len(boneFrameDataProperty)
-			sm64_anim.indices.shortData.append(frameCount)
-			sm64_anim.indices.shortData.append(transformValuesOffset)
-			if(transformValuesOffset) > 2**16 - 1:
-				raise PluginError('Animation is too large.')
-			transformValuesOffset += frameCount
-			transformValuesStart += 4
-			for value in boneFrameDataProperty:
-				sm64_anim.values.shortData.append(value)
+	for i in range(len(translationData)):
+		modelAnim.addBoneData([
+			translationData[i][0], translationData[i][1], translationData[i][2],
+			rotationData[i][0], rotationData[i][1], rotationData[i][2],
+			scaleData[i][0], scaleData[i][1], scaleData[i][2]])
 	
-	animSize = headerSize + len(sm64_anim.indices.shortData) * 2 + \
-		len(sm64_anim.values.shortData) * 2
-	
-	sm64_anim.header = SM64_AnimationHeader(sm64_anim.name, repetitions,
-		marioYOffset, frameInterval, nodeCount, transformValuesStart, 
-		transformIndicesStart, animSize)
-	
-	return sm64_anim
+	return modelAnim
 	
 def saveQuaternionFrame(frameData, rotation):
 	for i in range(3):
@@ -333,9 +250,18 @@ def removeTrailingFrames(frameData):
 				break
 		frameData[i] = frameData[i][:lastUniqueFrame + 1]
 
+def convertSignedToUnsigned(val):
+	return int.from_bytes(val.to_bytes(
+			2, 'big', signed = True), 'big', signed = False)
+
 def saveTranslationFrame(frameData, translation):
 	for i in range(3):
-		frameData[i].append(min(int(round(translation[i] * bpy.context.scene.blenderToN64Scale)),
+		frameData[i].append(min(convertSignedToUnsigned(int(round(translation[i] * bpy.context.scene.blenderToN64Scale))),
+			2**16 - 1))
+
+def saveScaleFrame(frameData, scale):
+	for i in range(3):
+		frameData[i].append(min(convertSignedToUnsigned(int(round(scale[i] * 256))),
 			2**16 - 1))
 
 def convertAnimationData(anim, armatureObj, frameEnd):
@@ -350,33 +276,44 @@ def convertAnimationData(anim, armatureObj, frameEnd):
 		currentPoseBone = armatureObj.pose.bones[boneName]
 		bonesToProcess = bonesToProcess[1:]
 
-		# Only handle 0x13 bones for animation
-		if currentBone.geo_cmd == 'DisplayListWithOffset':
-			animBones.append(boneName)
+		#if currentBone.geo_cmd == 'DisplayListWithOffset':
+		animBones.append(boneName)
 
 		# Traverse children in alphabetical order.
 		childrenNames = sorted([bone.name for bone in currentBone.children])
 		bonesToProcess = childrenNames + bonesToProcess
 	
 	# list of boneFrameData, which is [[x frames], [y frames], [z frames]]
-	translationData = [[],[],[]]
-	armatureFrameData = []
-	for i in range(len(animBones)):
-		armatureFrameData.append([[],[],[]])
+	translationData = [[[],[],[]] for _ in range(len(animBones))]
+	rotationData = [[[],[],[]] for _ in range(len(animBones))]
+	scaleData = [[[],[],[]] for _ in range(len(animBones))]
+
 	for frame in range(frameEnd):
 		bpy.context.scene.frame_set(frame)
-		rootBone = armatureObj.data.bones[animBones[0]]
-		rootPoseBone = armatureObj.pose.bones[animBones[0]]
-
-		# Hacky solution to handle Z-up to Y-up conversion
-		translation = mathutils.Quaternion((1, 0, 0), math.radians(-90.0)) @ \
-			rootPoseBone.matrix.decompose()[0]
-		saveTranslationFrame(translationData, translation)
-
 		for boneIndex in range(len(animBones)):
 			boneName = animBones[boneIndex]
 			currentBone = armatureObj.data.bones[boneName]
 			currentPoseBone = armatureObj.pose.bones[boneName]
+
+
+			decomposedTranslation = currentPoseBone.matrix.decompose()[0]
+			decomposedRootTranslation = currentBone.matrix_local.decompose()[0]
+			decomposedScale = currentPoseBone.matrix.decompose()[2]
+			decomposedRootScale = currentBone.matrix.to_4x4().decompose()[2]
+
+			if boneIndex == 0 and frame == 0:
+				print(boneName)
+				print(decomposedTranslation)
+				print(decomposedRootTranslation)
+				print(decomposedScale)
+				print(decomposedRootScale)
+
+			# Hacky solution to handle Z-up to Y-up conversion
+			translationValue = mathutils.Quaternion((1, 0, 0), math.radians(-90.0)) @ \
+				(decomposedTranslation - decomposedRootTranslation)
+			# Swap Y and Z
+			scaleValue = mathutils.Vector((decomposedScale[0] / decomposedRootScale[0], decomposedScale[2] / decomposedRootScale[2], decomposedScale[1] / decomposedRootScale[1]))
+
 			
 			rotationValue = \
 				(currentBone.matrix.to_4x4().inverted() @ \
@@ -386,13 +323,10 @@ def convertAnimationData(anim, armatureObj, frameEnd):
 					currentBone.matrix.to_4x4().inverted() @ currentPoseBone.parent.matrix.inverted() @ \
 					currentPoseBone.matrix).to_quaternion()
 			
-			saveQuaternionFrame(armatureFrameData[boneIndex], rotationValue)
-	
-	removeTrailingFrames(translationData)
-	for frameData in armatureFrameData:
-		removeTrailingFrames(frameData)
-
-	return translationData, armatureFrameData
+			saveTranslationFrame(translationData[boneIndex], translationValue)
+			saveQuaternionFrame(rotationData[boneIndex], rotationValue)
+			saveScaleFrame(scaleData[boneIndex], scaleValue)
+	return translationData, rotationData, scaleData
 
 def getNextBone(boneStack, armatureObj):
 	if len(boneStack) == 0:

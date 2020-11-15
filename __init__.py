@@ -1013,7 +1013,7 @@ class SM64_ImportAnimPanel(bpy.types.Panel):
 		for i in range(panelSeparatorSize):
 			col.separator()
 		
-class SM64_ExportAnimMario(bpy.types.Operator):
+class Fork_ExportAnim(bpy.types.Operator):
 	bl_idname = 'object.sm64_export_anim'
 	bl_label = "Export Animation"
 	bl_options = {'REGISTER', 'UNDO', 'PRESET'}
@@ -1044,7 +1044,6 @@ class SM64_ExportAnimMario(bpy.types.Operator):
 				applyBasicTweaks(exportPath)
 			exportAnimationC(armatureObj, context.scene.loopAnimation, 
 				exportPath, bpy.context.scene.animName,
-				'TODO delete this',
 				context.scene.animCustomExport, context.scene.animExportHeaderType, levelName)
 			self.report({'INFO'}, 'Success!')
 		except Exception as e:
@@ -1067,7 +1066,7 @@ class Fork_ExportAnimPanel(bpy.types.Panel):
 	# called every frame
 	def draw(self, context):
 		col = self.layout.column()
-		propsAnimExport = col.operator(SM64_ExportAnimMario.bl_idname)
+		propsAnimExport = col.operator(Fork_ExportAnim.bl_idname)
 		
 		col.prop(context.scene, 'loopAnimation')
 		col.prop(context.scene, 'animCustomExport')
@@ -1461,7 +1460,7 @@ classes = (
 	#SM64_ImportDL,
 	SM64_ExportDL,
 	#SM64_ImportAnimMario,
-	SM64_ExportAnimMario,
+	Fork_ExportAnim,
 	#SM64_ImportLevel
 	SM64_ExportLevel,
 	SM64_ExportCollision,
