@@ -322,6 +322,10 @@ def convertAnimationData(anim, armatureObj, frameEnd):
 				rotationValue = (
 					currentBone.matrix.to_4x4().inverted() @ currentPoseBone.parent.matrix.inverted() @ \
 					currentPoseBone.matrix).to_quaternion()
+				decomposedParentTranslation = currentPoseBone.parent.matrix.decompose()[0]
+				decomposedParentRootTranslation = currentBone.parent.matrix_local.decompose()[0]
+				translationValue = mathutils.Quaternion((1, 0, 0), math.radians(-90.0)) @ \
+					(decomposedTranslation - decomposedRootTranslation - (decomposedParentTranslation - decomposedParentRootTranslation))
 			
 			saveTranslationFrame(translationData[boneIndex], translationValue)
 			saveQuaternionFrame(rotationData[boneIndex], rotationValue)

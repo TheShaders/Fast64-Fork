@@ -6,6 +6,7 @@ import bpy, bmesh
 import os
 from io import BytesIO
 import math
+from .bvh_binding import *
 
 class CollisionVertex:
 	def __init__(self, position):
@@ -230,25 +231,15 @@ class SM64ObjectPanel(bpy.types.Panel):
 			prop_split(box, obj, 'sm64_water_box', 'Water Box Type')
 '''
 
-def exportCollisionBinary(obj, transformMatrix, romfile, startAddress,
-	endAddress, includeSpecials, includeChildren):
-	collision = exportCollisionCommon(obj, transformMatrix, includeSpecials,
-		includeChildren, obj.name, None)
-	start, end = collision.set_addr(startAddress)
-	if end > endAddress:
-		raise PluginError('Size too big: Data ends at ' + hex(end) +\
-			', which is larger than the specified range.')
-	collision.save_binary(romfile)
-	return start, end
-
 def exportCollisionC(obj, transformMatrix, dirPath, includeSpecials, 
 	includeChildren, name, customExport, writeRoomsFile, headerType,
-	groupName, levelName):
+	levelName):
 
 	dirPath, texDir = getExportDir(customExport, dirPath, headerType, 
 		levelName, '', name)
 
 	name = toAlnum(name)
+	print(dirPath)
 	colDirPath = os.path.join(dirPath, toAlnum(name))
 
 	if not os.path.exists(colDirPath):
@@ -259,69 +250,52 @@ def exportCollisionC(obj, transformMatrix, dirPath, includeSpecials,
 	fileObj = open(colPath, 'w', newline='\n')
 	collision = exportCollisionCommon(obj, transformMatrix, includeSpecials,
 		includeChildren, name, None)
+	collision.Compute()
 	fileObj.write(collision.to_c())
 	fileObj.close()
 
-	cDefine = collision.to_c_def()
-	if writeRoomsFile:
-		cDefine += collision.to_c_rooms_def()
-		roomsPath = os.path.join(colDirPath, 'rooms.inc.c')
-		roomsFile = open(roomsPath, 'w', newline='\n')
-		roomsFile.write(collision.to_c_rooms())
-		roomsFile.close()
+	cDefine = ""
+	# cDefine = collision.to_c_def()
+	# if writeRoomsFile:
+	# 	cDefine += collision.to_c_rooms_def()
+	# 	roomsPath = os.path.join(colDirPath, 'rooms.inc.c')
+	# 	roomsFile = open(roomsPath, 'w', newline='\n')
+	# 	roomsFile.write(collision.to_c_rooms())
+	# 	roomsFile.close()
 
-	headerPath = os.path.join(colDirPath, 'collision_header.h')
-	cDefFile = open(headerPath, 'w', newline='\n')
-	cDefFile.write(cDefine)
-	cDefFile.close()
+	# headerPath = os.path.join(colDirPath, 'collision_header.h')
+	# cDefFile = open(headerPath, 'w', newline='\n')
+	# cDefFile.write(cDefine)
+	# cDefFile.close()
 
-	if not customExport:
-		if headerType == 'Actor':
-			# Write to group files
-			if groupName == '' or groupName is None:
-				raise PluginError("Actor header type chosen but group name not provided.")
+	# if not customExport:
+	# 	if headerType == 'Actor':
+	# 		# Write to group files
+	# 		if groupName == '' or groupName is None:
+	# 			raise PluginError("Actor header type chosen but group name not provided.")
 
-			groupPathC = os.path.join(dirPath, groupName + ".c")
-			groupPathH = os.path.join(dirPath, groupName + ".h")
+	# 		groupPathC = os.path.join(dirPath, groupName + ".c")
+	# 		groupPathH = os.path.join(dirPath, groupName + ".h")
 
-			writeIfNotFound(groupPathC, '\n#include "' + name + '/collision.inc.c"', '')
-			if writeRoomsFile:
-				writeIfNotFound(groupPathC, '\n#include "' + name + '/rooms.inc.c"', '')
-			else:
-				deleteIfFound(groupPathC, '\n#include "' + name + '/rooms.inc.c"')
-			writeIfNotFound(groupPathH, '\n#include "' + name + '/collision_header.h"', '\n#endif')
+	# 		writeIfNotFound(groupPathC, '\n#include "' + name + '/collision.inc.c"', '')
+	# 		if writeRoomsFile:
+	# 			writeIfNotFound(groupPathC, '\n#include "' + name + '/rooms.inc.c"', '')
+	# 		else:
+	# 			deleteIfFound(groupPathC, '\n#include "' + name + '/rooms.inc.c"')
+	# 		writeIfNotFound(groupPathH, '\n#include "' + name + '/collision_header.h"', '\n#endif')
 		
-		elif headerType == 'Level':
-			groupPathC = os.path.join(dirPath, "leveldata.c")
-			groupPathH = os.path.join(dirPath, "header.h")
+	# 	elif headerType == 'Level':
+	# 		groupPathC = os.path.join(dirPath, "leveldata.c")
+	# 		groupPathH = os.path.join(dirPath, "header.h")
 
-			writeIfNotFound(groupPathC, '\n#include "levels/' + levelName + '/' + name + '/collision.inc.c"', '')
-			if writeRoomsFile:
-				writeIfNotFound(groupPathC, '\n#include "levels/' + levelName + '/' + name + '/rooms.inc.c"', '')
-			else:
-				deleteIfFound(groupPathC, '\n#include "levels/' + levelName + '/' + name + '/rooms.inc.c"')
-			writeIfNotFound(groupPathH, '\n#include "levels/' + levelName + '/' + name + '/collision_header.h"', '\n#endif')
+	# 		writeIfNotFound(groupPathC, '\n#include "levels/' + levelName + '/' + name + '/collision.inc.c"', '')
+	# 		if writeRoomsFile:
+	# 			writeIfNotFound(groupPathC, '\n#include "levels/' + levelName + '/' + name + '/rooms.inc.c"', '')
+	# 		else:
+	# 			deleteIfFound(groupPathC, '\n#include "levels/' + levelName + '/' + name + '/rooms.inc.c"')
+	# 		writeIfNotFound(groupPathH, '\n#include "levels/' + levelName + '/' + name + '/collision_header.h"', '\n#endif')
 		
 	return cDefine
-
-def exportCollisionInsertableBinary(obj, transformMatrix, filepath, 
-	includeSpecials, includeChildren):
-	collision = exportCollisionCommon(obj, transformMatrix, includeSpecials,
-		includeChildren, obj.name, None)
-	start, end = collision.set_addr(0)
-	if end > 0xFFFFFF:
-		raise PluginError('Size too big: Data ends at ' + hex(end) +\
-			', which is larger than the specified range.')
-	
-	bytesIO = BytesIO()
-	collision.save_binary(bytesIO)
-	data = bytesIO.getvalue()[start:]
-	bytesIO.close()
-
-	writeInsertableFile(filepath, insertableBinaryTypes['Collision'], 
-		[], collision.startAddress, data)
-
-	return data
 
 def exportCollisionCommon(obj, transformMatrix, includeSpecials, includeChildren, 
 	name, areaIndex):
@@ -344,19 +318,20 @@ def exportCollisionCommon(obj, transformMatrix, includeSpecials, includeChildren
 		bpy.context.view_layer.objects.active = obj
 		raise Exception(str(e))
 
-	collision = Collision(toAlnum(name) + '_collision')
+	collision = Bvh(toAlnum(name) + '_collision')
 	for collisionType, faces in collisionDict.items():
-		collision.triangles[collisionType] = []
-		for (faceVerts, specialParam, room) in faces:
-			indices = []
-			for roundedPosition in faceVerts:
-				index = collisionVertIndex(roundedPosition, collision.vertices)
-				if index is None:
-					collision.vertices.append(CollisionVertex(roundedPosition))
-					indices.append(len(collision.vertices) - 1)
-				else:
-					indices.append(index)
-			collision.triangles[collisionType].append(CollisionTriangle(indices, specialParam, room))
+		collision.AddTris(faces)
+		# collision.triangles[collisionType] = []
+		# for (faceVerts, specialParam, room) in faces:
+			# indices = []
+			# for roundedPosition in faceVerts:
+				# index = collisionVertIndex(roundedPosition, collision.vertices)
+				# if index is None:
+					# collision.vertices.append(CollisionVertex(roundedPosition))
+					# indices.append(len(collision.vertices) - 1)
+				# else:
+					# indices.append(index)
+			# collision.triangles[collisionType].append(CollisionTriangle(indices, specialParam, room))
 	if includeSpecials:
 		area = SM64_Area(areaIndex, '', '', '', None, None, [], name, None)
 		# This assumes that only levels will export with included specials,
@@ -380,14 +355,14 @@ def addCollisionTriangles(obj, collisionDict, includeChildren, transformMatrix, 
 				colType = material.collision_custom
 			specialParam = material.collision_param if material.use_collision_param else None
 
-			(x1, y1, z1) = roundPosition(transformMatrix @ obj.data.vertices[face.vertices[0]].co)
-			(x2, y2, z2) = roundPosition(transformMatrix @ obj.data.vertices[face.vertices[1]].co)
-			(x3, y3, z3) = roundPosition(transformMatrix @ obj.data.vertices[face.vertices[2]].co)
+			v1 = transformMatrix @ obj.data.vertices[face.vertices[0]].co
+			v2 = transformMatrix @ obj.data.vertices[face.vertices[1]].co
+			v3 = transformMatrix @ obj.data.vertices[face.vertices[2]].co
 
-			nx = (y2 - y1) * (z3 - z2) - (z2 - z1) * (y3 - y2)
-			ny = (z2 - z1) * (x3 - x2) - (x2 - x1) * (z3 - z2)
-			nz = (x2 - x1) * (y3 - y2) - (y2 - y1) * (x3 - x2)
-			magSqr = nx * nx + ny * ny + nz * nz
+			u = v2 - v1
+			v = v3 - v1
+			normal = u.cross(v)
+			magSqr = normal.dot(normal)
 
 			if magSqr <= 0:
 				print("Ignore denormalized triangle.")
@@ -396,9 +371,9 @@ def addCollisionTriangles(obj, collisionDict, includeChildren, transformMatrix, 
 			if colType not in collisionDict:
 				collisionDict[colType] = []
 			collisionDict[colType].append(((
-				(x1, y1, z1),
-				(x2, y2, z2),
-				(x3, y3, z3)), specialParam, obj.room_num))
+				v1,
+				v2,
+				v3), specialParam, obj.room_num))
 	
 	if includeChildren:
 		for child in obj.children:
