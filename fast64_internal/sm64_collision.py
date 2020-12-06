@@ -320,7 +320,7 @@ def exportCollisionCommon(obj, transformMatrix, includeSpecials, includeChildren
 
 	collision = Bvh(toAlnum(name) + '_collision')
 	for collisionType, faces in collisionDict.items():
-		collision.AddTris(faces)
+		collision.AddTris(faces, collisionType)
 		# collision.triangles[collisionType] = []
 		# for (faceVerts, specialParam, room) in faces:
 			# indices = []

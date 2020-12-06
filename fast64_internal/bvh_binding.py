@@ -25,7 +25,9 @@ class Bvh:
         self.c_bvh = ctypes.c_void_p(bvh_lib.createBvh())
         self.name = name
         self.unorderedTris = []
+        self.unorderedTypes = []
         self.orderedTris = []
+        self.orderedTypes = []
         self.nodeFirstTris = {} # Keys and values are original indices
         self.nodesReordered = []
         self.nodesMissNext = {0: -1} # Keys and values are original indices
@@ -33,7 +35,7 @@ class Bvh:
         self.nodeIsLeft = {-1: True, 0 : False} # Keys are original indices
     def __del__(self):
         bvh_lib.freeBvh(self.c_bvh)
-    def AddTris(self, tris):
+    def AddTris(self, tris, surfaceType):
         c_tris = (ctypes.c_float * 3 * 3 * len(tris))()
         for triIndex, tri in enumerate(tris):
             for vertIndex, vert in enumerate(tri[0]):
@@ -42,6 +44,7 @@ class Bvh:
                 c_tris[triIndex][vertIndex][2] = ctypes.c_float(vert[2])
         bvh_lib.addTris(self.c_bvh, c_tris, len(tris))
         self.unorderedTris.extend(tris)
+        self.unorderedTypes.extend([surfaceType] * len(tris))
     def Compute(self):
         bvh_lib.computeBvh(self.c_bvh)
 
@@ -88,6 +91,7 @@ class Bvh:
             self.nodeFirstTris[i] = len(self.orderedTris)
             for triIndex in self.GetNodeTriIndices(i):
                 self.orderedTris.append(self.unorderedTris[triIndex])
+                self.orderedTypes.append(self.unorderedTypes[triIndex])
     def GetNodeCount(self):
         return int(bvh_lib.numNodes(self.c_bvh))
     def GetNodeBounds(self, index):
@@ -110,6 +114,7 @@ class Bvh:
         if self.c_bvh is None:
             return ''
 
+        typeArrayDef = 'SurfaceType ' + self.name + '_surface_types[] = {'
         triArrayDef = 'ColTri ' + self.name + '_tris[] = {'
         for triIndex, triData in enumerate(self.orderedTris):
             tri = triData[0]
@@ -128,7 +133,11 @@ class Bvh:
             triArrayDef += '{' + ', '.join(map(str, u)) + '}, '
             triArrayDef += '{' + ', '.join(map(str, v)) + '}, '
             triArrayDef += str(uu) + ', ' + str(uv) + ', ' + str(vv) + '}, '
+            if triIndex % 16 == 0:
+                typeArrayDef += '\n    '
+            typeArrayDef += str(self.orderedTypes[triIndex]) + ', '
         triArrayDef += '\n};\n'
+        typeArrayDef += '\n};\n'
 
         bvhArrayDef = 'BVHNode ' + self.name + '_nodes[] = {'
         for newNodeIndex, nodeIndex in enumerate(self.nodesReordered):
@@ -150,9 +159,10 @@ class Bvh:
         bvhTreeDef += '    ' + str(self.GetNodeCount()) + ',\n'
         bvhTreeDef += '    ' + self.name + '_tris,\n'
         bvhTreeDef += '    ' + self.name + '_nodes,\n'
+        bvhTreeDef += '    ' + self.name + '_surface_types,\n'
         bvhTreeDef += '};\n'
 
-        return triArrayDef + '\n' + bvhArrayDef + '\n' + bvhTreeDef
+        return typeArrayDef + '\n' + triArrayDef + '\n' + bvhArrayDef + '\n' + bvhTreeDef
 
 
 bvh_lib.enableDebug()
